@@ -1,0 +1,35 @@
+package co.edu.clase.pc_autorent_jcoyh.infrastructure.config;
+
+import co.edu.clase.pc_autorent_jcoyh.application.port.output.AlquilerRepositoryPort;
+import co.edu.clase.pc_autorent_jcoyh.application.port.output.AutoRepositoryPort;
+import co.edu.clase.pc_autorent_jcoyh.application.port.output.ClienteRepositoryPort;
+import co.edu.clase.pc_autorent_jcoyh.application.service.AlquilerService;
+import co.edu.clase.pc_autorent_jcoyh.application.service.AutoService;
+import co.edu.clase.pc_autorent_jcoyh.application.service.ClienteService;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+
+@Configuration
+public class BeanConfiguration {
+
+    @Bean
+    public AutoService autoService(AutoRepositoryPort autoRepositoryPort,
+                                AlquilerRepositoryPort alquilerRepositoryPort) {
+        return new AutoService(autoRepositoryPort, alquilerRepositoryPort); // De aquí pasa al constructor.
+    }
+
+    @Bean
+    public AlquilerService alquilerService(AlquilerRepositoryPort alquilerRepositoryPort, 
+                                        AutoRepositoryPort autoRepositoryPort,
+                                        ClienteRepositoryPort clienteRepositoryPort) {
+        return new AlquilerService(alquilerRepositoryPort, autoRepositoryPort, clienteRepositoryPort);
+    }
+
+    @Bean 
+    public ClienteService clienteService(ClienteRepositoryPort clienteRepositoryPort,
+                                        AlquilerRepositoryPort alquilerRepositoryPort) {
+                return new ClienteService(clienteRepositoryPort, alquilerRepositoryPort);
+    }
+}

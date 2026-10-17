@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 AutoRent - Panel de Auditoría Hexagonal</title>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --info: #0284c7;
+            --border: #cbd5e1;
+            --error-bg: #fef2f2;
+            --error-text: #991b1b;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+        header h1 { margin: 0; color: #1e3a8a; font-size: 2em; }
+        header p { margin: 5px 0 0 0; color: #475569; }
+        
+        /* DISEÑO DE PANELES VERTICALES */
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) 380px 380px;
+            gap: 15px;
+            align-items: start;
+        }
+        
+        .forms-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+        .card h2 { margin-top: 0; font-size: 1.25em; color: #1e40af; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px; }
+        .card h3 { margin-top: 10px; font-size: 1em; color: #334155; margin-bottom: 8px; }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: 600;
+            font-size: 0.85em;
+            color: #334155;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 6px 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        /* 📐 CONTENEDOR HORIZONTAL FLEXBOX PARA OPTIMIZACIÓN DE ESPACIO */
+        .form-row-horizontal {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 8px;
+        }
+        .form-row-horizontal .form-group {
+            margin-bottom: 0;
+            flex: 1;
+        }
+        
+        /* ALERTAS DE VALIDACIÓN */
+        .error-message {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+            display: none;
+            border: 1px solid #fca5a5;
+            font-weight: 500;
+        }
+        
+        button {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #15803d; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #b91c1c; }
+        .btn-info { background-color: var(--info); color: white; }
+        .btn-info:hover { background-color: #0369a1; }
+
+        /* 🚫 ESTADO VISUAL PARA BOTONES DESACTIVADOS */
+        button:disabled {
+            background-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none !important;
+        }
+        
+        /* PANEL VERTICAL DE CONSULTAS */
+        .query-panel {
+            /* height: calc(100vh - 120px); */
+            flex: 1;  /* NUEVO */
+            /* position: sticky; */
+            /* top: 20px; */
+            display: flex;
+            flex-direction: column;
+            max-height: 300px;  /* NUEVO */
+        }
+        .query-select-box {
+            margin-bottom: 8px;  /* ESTABA EN 12px */
+        }
+        .table-container {
+            /* flex-grow: 1; */
+            flex: 1;  /* NUEVO */
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 0.85em;
+        }
+        .data-item {
+            background-color: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .data-item strong { color: #1e3a8a; }
+        .divider { border-top: 1px dashed var(--border); margin: 10px 0; }
+        
+        /* PANEL VERTICAL DE CONSOLA */
+        .console-panel {
+            /* height: calc(100vh - 120px); */
+            flex: 1; /* NUEVO */
+            /* position: sticky; */
+            /* top: 20px; */
+            display: flex;
+            flex-direction: column;
+            max-height: 200px; /* NUEVO */
+        }
+        .console-box {
+            /* flex-grow: 1; */
+            flex: 1;  /* NUEVO */
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            /* box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); */
+            font-size: 0.85em;
+            /* line-height: 1.3; */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🚗 AutoRent — Módulo de Control</h1>
+        <p>Estructura de Auditoría Visual en Caliente para la Verificación de datos</p>
+    </header>
+
+    <div class="workspace-layout">
+        
+        <!-- COLUMNA 1: FORMULARIOS DE ACCIÓN -->
+        <div class="forms-column">
+            
+            <!-- TARJETA VEHÍCULOS (CON INTEGRACIÓN DE MANTENIMIENTO AL FINAL) -->
+            <div class="card" id="cardAuto">
+                <h2>🚗 Gestión de Vehículos</h2>
+                <div id="errAuto" class="error-message">❌ Todos los campos son obligatorios.</div>
+                
+                <div class="form-row-horizontal">
+                    <div class="form-group" style="flex: 0 0 100px;"><label>Placa:</label><input type="text" id="autoPlaca" placeholder="ABC-123"></div>
+                    <div class="form-group" style="flex: 2;"><label>Marca:</label><input type="text" id="autoMarca" placeholder="Mazda"></div>
+                    <div class="form-group" style="flex: 2;"><label>Modelo:</label><input type="text" id="autoModelo" placeholder="CX-30"></div>
+                </div>
+
+                <div class="form-row-horizontal">
+                    <div class="form-group" style="flex: 0 0 100px;"><label>Año:</label><input type="number" id="autoAnio" value="2026"></div>
+                    <div class="form-group"><label>Precio por Día ($):</label><input type="number" id="autoPrecio" value="180000"></div>
+                    <div class="form-group"><label>Depósito Mínimo ($):</label><input type="number" id="autoDeposito" value="500000"></div>
+                    <div class="form-group"><label>Kilometraje Acumulado:</label><input type="number" id="autoKilometraje" value="0000"></div>
+                </div>
+
+                <button class="btn-primary" onclick="registrarAuto()">Registrar Vehículo</button>
+
+                <!-- 🛠️ SECCIÓN INTEGRADA DE MANTENIMIENTO MECÁNICO -->
+                <div class="divider"></div>
+                <h3>🛠️ Control de Taller y Mantenimiento</h3>
+                <div id="errMaint" class="error-message">❌ Especifique la placa y el kilometraje acumulado.</div>
+                <div class="form-row-horizontal">
+                    <div class="form-group"><label>Placa Auto:</label><input type="text" id="maintPlaca" placeholder="ABC-123"></div>
+                    <div class="form-group"><label>Kilometraje Acumulado:</label><input type="number" id="maintKm" placeholder="0000"></div>
+                </div>
+                <div class="form-row-horizontal">
+                    <button class="btn-info" onclick="alterarMantenimiento(true)">MANTENIMIENTO</button>
+                    <button class="btn-success" onclick="alterarMantenimiento(false)">DISPONIBLE</button>
+                </div>
+            </div>
+
+            <!-- TARJETA CLIENTES -->
+            <div class="card" id="cardCliente">
+                <h2>👥 Gestión de Clientes</h2>
+                <div id="errCliente" class="error-message">❌ Todos los campos son obligatorios.</div>
+                
+                <div class="form-group"><label>Nombre Completo:</label><input type="text" id="clienteNombre" placeholder="Carlos Pérez"></div>
+                
+                <div class="form-row-horizontal">
+                    <div class="form-group" style="flex: 4;"><label>Tipo Documento:</label>
+                        <select id="clienteTipoDoc">
+                            <option value="CC">Cédula de Ciudadanía (CC)</option>
+                            <option value="CE">Cédula de Extranjería (CE)</option>
+                            <option value="PASAPORTE">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 6;"><label>Documento:</label><input type="number" id="clienteDoc" placeholder="1020304050"></div>
+                </div>
+
+                <div class="form-row-horizontal">
+                    <div class="form-group" style="flex: 4;"><label>Teléfono:</label><input type="text" id="clienteTel" placeholder="3001234567"></div>
+                    <div class="form-group" style="flex: 6;"><label>Correo Electrónico:</label><input type="email" id="clienteEmail" placeholder="carlosperez@email.com"></div>
+                </div>
+
+                <button class="btn-primary" onclick="registrarCliente()">Registrar Cliente</button>
+            </div>
+
+            <!-- TARJETA ALQUILERES (REDISÉÑADA A ZONA DE ALQUILER HORIZONTAL) -->
+            <div class="card" id="cardAlquiler">
+                <h2>📑 Zona de Alquiler</h2>
+                <div id="errAlquiler" class="error-message">❌ Complete los campos obligatorios del contrato.</div>
+                
+                <!-- FILA HORIZONTAL: CAMPOS DE APERTURA DE CONTRATOS -->
+                <div class="form-row-horizontal">
+                    <div class="form-group">
+                        <label>Documento del Cliente:</label>
+                        <input type="number" id="alqClienteDoc" placeholder="1020304050">
+                    </div>
+                    <div class="form-group">
+                        <label>Placa del Vehículo:</label>
+                        <input type="text" id="alqAutoPlaca" placeholder="ABC-123">
+                    </div>
+                    <div class="form-group" style="flex: 0 0 90px;">
+                        <label>Días:</label>
+                        <input type="number" id="alqDias" value="5">
+                    </div>
+                </div>
+                <button class="btn-success" onclick="crearAlquiler()">Inicializar Alquiler</button>
+                
+                <div class="divider"></div>
+                
+                <!-- FILA HORIZONTAL: CAMPOS DE DEVOLUCIÓN Y RETORNO -->
+                <div class="form-row-horizontal">
+                    <div class="form-group">
+                        <label>ID Contrato a Finalizar:</label>
+                        <input type="number" id="finAlqId" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Kilometraje Acumulado:</label>
+                        <input type="number" id="finKilometraje" placeholder="0000">
+                    </div>
+                </div>
+                <button class="btn-danger" onclick="finalizarAlquiler()">Devolver y Liberar</button>
+            </div>
+        </div>
+
+        <!-- COLUMNA CENTRAL: AUDITORÍA DE TABLAS DE BASE DE DATOS -->
+        <div class="card query-panel" style="flex: 1.1; display: flex; flex-direction: column; min-height: 520px;">
+            <h2>🔍 Consultas de Tablas</h2>
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label>Seleccione Vista del Catálogo:</label>
+                <select id="tablaSelector" onchange="ejecutarConsulta(); actualizarInterfazBuscador();">
+                    <option value="autos">🚗 Catálogo de Vehículos (AUTOS)</option>
+                    <option value="clientes">👥 Registro de Clientes (CLIENTES)</option>
+                    <option value="alquileres">📑 Contratos de Renta (ALQUILERES + JOINS)</option>
+                </select>
+            </div>
+            <div class="table-container" id="contenedorTabla" style="flex: 1; overflow-y: auto; background-color: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 0.85rem;">
+                Seleccione una tabla para auditar el estado del Core Hexagonal...
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: PANELES INTERACTIVOS Y MONITOREO DE RED -->
+        <div style="flex: 0.9; display: flex; flex-direction: column; gap: 15px;">
+            
+            <!-- NUEVA TARJETA DE BÚSQUEDAS Y FILTROS ADAPTATIVOS -->
+            <div class="card" id="panelBusqueda" style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                    <h2 style="margin: 0; font-size: 1.1rem;">⚡ Búsqueda y Filtros en Caliente</h2>
+                    <span id="contadorRegistros" style="background-color: var(--primary-light); color: var(--primary); padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">Registros: 0</span>
+                </div>
+                
+                <div class="form-group" style="margin: 0;">
+                    <input type="text" id="inputFiltroUniversal" oninput="filtrarDatosLocales()" placeholder="Buscar en el catálogo..." style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;">
+                </div>
+                
+                <div class="form-group" id="contenedorFiltroEstado" style="margin: 0; display: none;">
+                    <label style="font-size: 0.75rem; font-weight: bold; margin-bottom: 3px; display: block;">Filtrar por Estado Lógico:</label>
+                    <select id="selectorEstadoFiltro" onchange="filtrarDatosLocales()" style="width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;">
+                        <!-- Las opciones se inyectarán dinámicamente -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- PANEL VERTICAL DE CONSOLA HTTP JSON COMPACTO -->
+            <div class="card console-panel" style="flex: 1; display: flex; flex-direction: column; max-height: 250px; margin: 0;">
+                <h2>🖥️ Consola HTTP JSON</h2>
+                <div class="console-box" id="salidaConsola" style="flex: 1; overflow-y: auto; background-color: #0f172a; color: #38bdf8; font-family: monospace; padding: 10px; border-radius: 6px; font-size: 0.8rem; white-space: pre-wrap;">Esperando tráfico de red...</div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const HOST = "http://localhost:8081/api";
+
+    // 🚗 MÁSCARA AUTOMÁTICA Y ESTRICTA DE PLACAS (3 Letras - 3 Números)
+    function aplicarMascaraPlaca(inputElement) {
+        inputElement.addEventListener("input", function (e) {
+            let entrada = e.target.value.toUpperCase();
+            let resultado = "";
+
+            let letras = entrada.substring(0, 3).replace(/[^A-Z]/g, "");
+            resultado += letras;
+
+            if (entrada.length > 3) {
+                resultado += "-";
+                let bloqueNumerico = entrada.substring(3).replace(/-/g, "");
+                let numeros = bloqueNumerico.substring(0, 3).replace(/[^0-9]/g, "");
+                resultado += numeros;
+            }
+
+            e.target.value = resultado;
+            validarFormularios(); // Dispara la validación del botón asociado
+        });
+        inputElement.maxLength = 7;
+    }
+
+    // 👥 MÁSCARA PURA DE DÍGITOS PARA DOCUMENTOS (Solo dígitos del 0 al 9)
+    function aplicarFiltroDocumento(inputElement) {
+        inputElement.addEventListener("input", function (e) {
+            // Elimina instantáneamente espacios, letras y signos (+ , -)
+            e.target.value = e.target.value.replace(/[^0-9]/g, "");
+            validarFormularios();
+        });
+    }
+
+    // Enlazar la máscara a los 3 campos de placa cuando la página termine de cargar
+    // window.addEventListener("DOMContentLoaded", () => {
+    //     aplicarMascaraPlaca(document.getElementById("autoPlaca"));
+    //     aplicarMascaraPlaca(document.getElementById("maintPlaca"));
+    //     aplicarMascaraPlaca(document.getElementById("alqAutoPlaca"));
+    // });
+
+    function pintarConsola(status, data) {
+        const consola = document.getElementById("salidaConsola");
+        const esExitoso = (status >= 200 && status < 300);
+        
+        consola.style.color = esExitoso ? "#38bdf8" : "#f87171";
+        consola.innerText = `HTTP Status: ${status}\n\n${JSON.stringify(data, null, 2)}`;
+        
+        if (esExitoso) {
+            desactivarTodosLosBotones();
+        }
+        
+        ejecutarConsulta();
+    }
+
+    // ⚙️ VALIDACIÓN DINÁMICA Y ESCUDO DE BOTONES EN TIEMPO REAL
+    function validarFormularios() {
+        // 🚗 Tarjeta Autos (Requiere Marca, Modelo y Placa de 7 caracteres)
+        const autoPlaca = document.getElementById("autoPlaca").value.trim();
+        const autoMarca = document.getElementById("autoMarca").value.trim();
+        const autoModelo = document.getElementById("autoModelo").value.trim();
+        const btnAuto = document.querySelector("#cardAuto button.btn-primary");
+        btnAuto.disabled = (autoPlaca.length !== 7 || !autoMarca || !autoModelo);
+
+        // 🛠️ Tarjeta Mantenimiento (Requiere Placa completa y Kilometraje digitado)
+        const maintPlaca = document.getElementById("maintPlaca").value.trim();
+        const maintKm = document.getElementById("maintKm").value.trim();
+        const btnMaintInfo = document.querySelector("#cardAuto button.btn-info");
+        const btnMaintSuccess = document.querySelector("#cardAuto button.btn-success");
+        const maintInvalido = (maintPlaca.length !== 7 || !maintKm);
+        btnMaintInfo.disabled = maintInvalido;
+        btnMaintSuccess.disabled = maintInvalido;
+
+        // 👥 Tarjeta Clientes (Nombre y Documento obligatorios)
+        const clienteNombre = document.getElementById("clienteNombre").value.trim();
+        const clienteDoc = document.getElementById("clienteDoc").value.trim();
+        const btnCliente = document.querySelector("#cardCliente button.btn-primary");
+        btnCliente.disabled = (!clienteNombre || !clienteDoc);
+
+        // 📑 Tarjeta Alquileres - Apertura (Permite enviar días para que backend evalúe <= 0)
+        const alqClienteDoc = document.getElementById("alqClienteDoc").value.trim();
+        const alqAutoPlaca = document.getElementById("alqAutoPlaca").value.trim();
+        const alqDias = document.getElementById("alqDias").value.trim();
+        const btnAlqSuccess = document.querySelector("#cardAlquiler button.btn-success");
+        btnAlqSuccess.disabled = (!alqClienteDoc || alqAutoPlaca.length !== 7 || !alqDias);
+
+        // 🏁 Tarjeta Alquileres - Devolución
+        const finAlqId = document.getElementById("finAlqId").value.trim();
+        const finKilometraje = document.getElementById("finKilometraje").value.trim();
+        const btnAlqDanger = document.querySelector("#cardAlquiler button.btn-danger");
+        btnAlqDanger.disabled = (!finAlqId || !finKilometraje);
+    }
+
+    function desactivarTodosLosBotones() {
+        document.querySelectorAll("button").forEach(btn => {
+            btn.disabled = true;
+        });
+    }
+
+    // REGISTRAR VEHÍCULO
+    function registrarAuto() {
+        const placa = document.getElementById("autoPlaca").value.trim();
+        const marca = document.getElementById("autoMarca").value.trim();
+        const modelo = document.getElementById("autoModelo").value.trim();
+        const errDiv = document.getElementById("errAuto");
+
+        if (!placa || !marca || !modelo) {
+            errDiv.style.display = "block";
+            return;
+        }
+        errDiv.style.display = "none";
+
+        const payload = {
+            placa: placa,
+            marca: marca,
+            modelo: modelo,
+            anio: parseInt(document.getElementById("autoAnio").value),
+            precioPorDia: parseFloat(document.getElementById("autoPrecio").value),
+            deposito: parseFloat(document.getElementById("autoDeposito").value),
+            kilometraje: parseInt(document.getElementById("autoKilometraje").value)
+        };
+
+        fetch(`${HOST}/autos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json().then(data => pintarConsola(res.status, data)))
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+
+    // 🛠️ ACCIÓN EN CALIENTE DE MANTENIMIENTO MECÁNICO (PUT)
+    function alterarMantenimiento(enMantenimiento) {
+        const placaElement = document.getElementById("maintPlaca");
+        const kmElement = document.getElementById("maintKm");
+        
+        const placaValor = placaElement ? placaElement.value.trim() : "";
+        const kmValor = kmElement ? parseInt(kmElement.value) : 0;
+
+        if (!enMantenimiento) {
+            // Realizamos una consulta rápida al catálogo para calcular la diferencia real
+            fetch(`${HOST}/autos`)
+            .then(res => res.json())
+            .then(autos => {
+                const auto = autos.find(a => a.placa.toUpperCase() === placaValor.toUpperCase());
+                const kmActual = auto ? auto.kilometraje : 0;
+                const diferencia = kmValor - kmActual;
+
+                const mensajeConfirmacion = `¿Confirmar salida de taller mecánico?\n\n• Vehículo Placa: ${placaValor}\n• Kilometraje Actual: ${kmActual} km\n• Nuevo Kilometraje: ${kmValor} km\n• Recorrido en Mantenimiento: +${diferencia} km\n\n¿La diferencia de kilometraje es correcta?`;
+                
+                if (confirm(mensajeConfirmacion)) {
+                    ejecutarPeticionMantenimiento(placaValor, enMantenimiento, kmValor);
+                }
+            });
+            return; 
+        }
+
+        ejecutarPeticionMantenimiento(placaValor, enMantenimiento, kmValor);
+    }
+
+    // Función auxiliar para despachar el PUT limpio a la API
+    function ejecutarPeticionMantenimiento(placa, enMantenimiento, kilometraje) {
+        const payload = { placa: placa, enMantenimiento: enMantenimiento, kilometraje: kilometraje };
+        fetch(`${HOST}/autos/mantenimiento`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (res.ok) return res.json().then(data => pintarConsola(res.status, data));
+            return res.text().then(text => {
+                try { pintarConsola(res.status, JSON.parse(text)); } 
+                catch(e) { pintarConsola(res.status, { mensaje: text }); }
+            });
+        })
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API de Mantenimiento" }));
+    }
+
+    // REGISTRAR CLIENTE
+    function registrarCliente() {
+        const nombre = document.getElementById("clienteNombre").value.trim();
+        const docRaw = document.getElementById("clienteDoc").value;
+        const errDiv = document.getElementById("errCliente");
+
+        if (!nombre || !docRaw) {
+            errDiv.style.display = "block";
+            return;
+        }
+        errDiv.style.display = "none";
+
+        const payload = {
+            nombre: nombre,
+            tipoDocumento: document.getElementById("clienteTipoDoc").value,
+            documento: parseInt(docRaw),
+            telefono: document.getElementById("clienteTel").value.trim(),
+            email: document.getElementById("clienteEmail").value.trim()
+        };
+
+        fetch(`${HOST}/clientes`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json().then(data => pintarConsola(res.status, data)))
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+
+    // INICIALIZAR ALQUILER (Sincronizado con IDs y homologación a Cero)
+    function crearAlquiler() {
+        const docRaw = document.getElementById("alqClienteDoc").value.trim();
+        const placaRaw = document.getElementById("alqAutoPlaca").value.trim();
+        const diasRaw = document.getElementById("alqDias").value;
+        // const errDiv = document.getElementById("errAlquiler");
+
+        // No permite el ingreso de valores cero o negativos
+        // if (!docRaw || !placaRaw || !diasRaw || parseInt(diasRaw) <= 0) {
+        //     errDiv.style.display = "block";
+        //     return;
+        // }
+        // errDiv.style.display = "none";
+
+        fetch(`${HOST}/clientes`)
+        .then(res => res.json())
+        .then(clientes => {
+            const clienteEncontrado = clientes.find(c => c.documento == parseInt(docRaw));
+            const clienteIdFinal = clienteEncontrado ? clienteEncontrado.id : 0;
+
+            return fetch(`${HOST}/autos`)
+            .then(res => res.json())
+            .then(autos => {
+                const autoEncontrado = autos.find(a => a.placa.toUpperCase() === placaRaw.toUpperCase());
+                const autoIdFinal = autoEncontrado ? autoEncontrado.id : 0;
+
+                const payload = {
+                    clienteId: clienteIdFinal,
+                    autoId: autoIdFinal,
+                    cantidadDias: parseInt(diasRaw)
+                };
+
+                return fetch(`${HOST}/alquileres`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+            });
+        })
+        .then(res => {
+            if (res.ok) {
+                return res.json().then(data => pintarConsola(res.status, data));
+            } else {
+                return res.text().then(text => {
+                    try { pintarConsola(res.status, JSON.parse(text)); } 
+                    catch(e) { pintarConsola(res.status, { mensaje: text }); }
+                });
+            }
+        })
+        // .catch(err => {
+        //     console.error(err);
+        //     pintarConsola(500, { error: "Fallo en la comunicación con la API" });
+        // });
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+
+    // FINALIZAR ALQUILER
+    function finalizarAlquiler() {
+        const alqIdElement = document.getElementById("finAlqId");
+        const kmFinalElement = document.getElementById("finKilometraje");
+        
+        const alqIdValor = alqIdElement ? alqIdElement.value.trim() : "";
+        const kmFinalValor = kmFinalElement ? parseInt(kmFinalElement.value) : 0;
+
+        // 🏁 Solicitar confirmación explícita antes de liberar el auto y cerrar el contrato
+        const mensajeConfirmacion = `¿Confirmar Devolución del Vehículo y Cierre del Contrato?\n\n• ID Contrato: ${alqIdValor}\n• Odómetro de Retorno: ${kmFinalValor} km\n\n¿Desea liquidar el alquiler con estos datos?`;
+        if (!confirm(mensajeConfirmacion)) {
+            return; // Aborta la transacción si el usuario detecta un error de digitación
+        }
+
+        const payload = { kilometrajeFinal: kmFinalValor };
+
+        fetch(`${HOST}/alquileres/${alqIdValor}/finalizar`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (res.ok) {
+                return res.json().then(data => pintarConsola(res.status, data));
+            } else {
+                return res.text().then(text => {
+                    try { pintarConsola(res.status, JSON.parse(text)); } 
+                    catch(e) { pintarConsola(res.status, { mensaje: text }); }
+                });
+            }
+        })
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+
+    // PANEL DE CONSULTAS CRUZADAS DINÁMICAS (CICLOS COMPLETOS)
+    function ejecutarConsulta() {
+        const tabla = document.getElementById("tablaSelector").value;
+        const contenedor = document.getElementById("contenedorTabla");
+
+        fetch(`${HOST}/${tabla}`)
+        .then(res => {
+            if (!res.ok) {
+                contenedor.innerHTML = `<div style='color:var(--danger)'>⚠️ Error al conectar con el endpoint /api/${tabla} en H2.</div>`;
+                return;
+            }
+            res.json().then(lista => {
+                if (!lista || lista.length === 0) {
+                    contenedor.innerHTML = `<div style='color:var(--info)'>💡 La tabla ${tabla.toUpperCase()} está creada pero no contiene registros actualmente.</div>`;
+                    return;
+                }
+
+                let html = "";
+                
+                lista.forEach(data => {
+                    if (tabla === "autos") {
+                        html += `
+                            <div class="data-item">
+                                <strong>ID Interno:</strong> ${data.id}<br>
+                                <strong>Placa:</strong> ${data.placa}<br>
+                                <strong>Vehículo:</strong> ${data.marca} ${data.modelo} (${data.anio})<br>
+                                <strong>Costo por Día:</strong> $${data.precioPorDia}<br>
+                                <strong>Kilometraje:</strong> ${data.kilometraje} km<br>
+                                <strong>Estado H2:</strong> <span style="color:${data.estado === 'DISPONIBLE' ? 'var(--success)' : data.estado === 'ALQUILADO' ? 'var(--danger)' : 'var(--info)'};font-weight:bold">${data.estado}</span>
+                            </div>
+                        `;
+                    } else if (tabla === "clientes") {
+                        html += `
+                            <div class="data-item">
+                                <strong>ID Interno:</strong> ${data.id}<br>
+                                <strong>Nombre:</strong> ${data.nombre}<br>
+                                <strong>Identificación:</strong> ${data.tipoDocumento} — ${data.documento}<br>
+                                <strong>Teléfono:</strong> ${data.telefono || 'N/A'}<br>
+                                <strong>Correo:</strong> ${data.email || 'N/A'}
+                            </div>
+                        `;
+                    } else if (tabla === "alquileres") {
+                        html += `
+                            <div class="data-item">
+                                <strong>Contrato Renta ID:</strong> ${data.id}<br>
+                                <strong>Vigencia:</strong> ${data.fechaInicio} al ${data.fechaFin}<br>
+                                <strong>Liquidación total:</strong> $${data.valorTotal} (${data.cantidadDias} días)<br>
+                                <strong>Estado Contrato:</strong> <span style="color:var(--primary);font-weight:bold">${data.estado}</span>
+                                <div class="divider"></div>
+                                <strong>🔗 CRUCE ADAPTADOR (CLIENTE):</strong><br>
+                                • ID Relacionado: ${data.clienteId}<br>
+                                <div class="divider"></div>
+                                <strong>🔗 CRUCE ADAPTADOR (VEHÍCULO):</strong><br>
+                                • ID Relacionado: ${data.autoId}<br>
+                                • Kilometraje de Salida: ${data.kilometrajeInicial} km<br>
+                                • Kilometraje de Retorno: ${data.kilometrajeFinal > 0 ? data.kilometrajeFinal + ' km' : 'En curso'}
+                            </div>
+                        `;
+                    }
+                });
+                
+                contenedor.innerHTML = html;
+            });
+        })
+        // .catch(() => {
+        //     contenedor.innerHTML = `<div style='color:var(--info)'>💡 Interfaz sincronizada. Agregue datos o verifique los métodos GET en sus controladores REST.</div>`;
+        // });
+    }
+
+    // window.onload = ejecutarConsulta;
+
+    window.onload = () => {
+        // Enlazar máscaras automáticas de placa
+        aplicarMascaraPlaca(document.getElementById("autoPlaca"));
+        aplicarMascaraPlaca(document.getElementById("maintPlaca"));
+        aplicarMascaraPlaca(document.getElementById("alqAutoPlaca"));
+
+        // Enlazar filtros estrictos de números de identificación
+        aplicarFiltroDocumento(document.getElementById("clienteDoc"));
+        aplicarFiltroDocumento(document.getElementById("alqClienteDoc"));
+
+        // Escuchar cambios globales en todos los inputs para actualizar el escudo de los botones
+        document.querySelectorAll("input, select").forEach(element => {
+            if (element.id !== "tablaSelector") {
+                element.addEventListener("input", validarFormularios);
+            }
+        });
+
+        validarFormularios(); // Evaluación inicial de botones (nacen desactivados)
+        ejecutarConsulta();   // Carga inicial de datos de H2
+    };
+
+</script>
+</body>
+</html>

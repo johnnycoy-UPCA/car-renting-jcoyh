@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 AutoRent - Panel de Control Hexagonal</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --border: #e5e7eb;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+        h1 { margin: 0; color: #1e3a8a; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+        .card h2 { margin-top: 0; color: #1e40af; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #15803d; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #b91c1c; }
+        
+        .console-box {
+            background-color: #1e293b;
+            color: #38bdf8;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            white-space: pre-wrap;
+        }
+        .console-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🚗 AutoRent — Módulo de Interacción Web</h1>
+        <p>Estructura de Control en Caliente para Validación de Arquitectura Hexagonal</p>
+    </header>
+
+    <div class="grid">
+        <!-- SECCIÓN 1: VEHÍCULOS -->
+        <div class="card">
+            <h2>🚗 Gestión de Vehículos</h2>
+            <div class="form-group">
+                <label>Placa:</label>
+                <input type="text" id="autoPlaca" placeholder="JC-777">
+            </div>
+            <div class="form-group">
+                <label>Marca:</label>
+                <input type="text" id="autoMarca" placeholder="Mazda">
+            </div>
+            <div class="form-group">
+                <label>Modelo:</label>
+                <input type="text" id="autoModelo" placeholder="CX-30">
+            </div>
+            <div class="form-group">
+                <label>Año:</label>
+                <input type="number" id="autoAnio" value="2026">
+            </div>
+            <div class="form-group">
+                <label>Precio por Día ($):</label>
+                <input type="number" id="autoPrecio" value="180000">
+            </div>
+            <div class="form-group">
+                <label>Depósito Mínimo ($):</label>
+                <input type="number" id="autoDeposito" value="500000">
+            </div>
+            <div class="form-group">
+                <label>Kilometraje:</label>
+                <input type="number" id="autoKilometraje" value="12500">
+            </div>
+            <button class="btn-primary" onclick="registrarAuto()">Registrar Vehículo</button>
+        </div>
+
+        <!-- SECCIÓN 2: CLIENTES -->
+        <div class="card">
+            <h2>👥 Gestión de Clientes</h2>
+            <div class="form-group">
+                <label>Nombre Completo:</label>
+                <input type="text" id="clienteNombre" placeholder="Carlos Pérez">
+            </div>
+            <div class="form-group">
+                <label>Tipo Documento:</label>
+                <select id="clienteTipoDoc">
+                    <option value="CC">Cédula de Ciudadanía (CC)</option>
+                    <option value="CE">Cédula de Extranjería (CE)</option>
+                    <option value="PASAPORTE">Pasaporte</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Documento (Numérico Obligatorio):</label>
+                <input type="number" id="clienteDoc" placeholder="1020304050">
+            </div>
+            <div class="form-group">
+                <label>Teléfono:</label>
+                <input type="text" id="clienteTel" placeholder="3001234567">
+            </div>
+            <div class="form-group">
+                <label>Correo Electrónico:</label>
+                <input type="email" id="clienteEmail" placeholder="carlos@email.com">
+            </div>
+            <button class="btn-primary" onclick="registrarCliente()">Registrar Cliente</button>
+        </div>
+
+        <!-- SECCIÓN 3: ALQUILERES -->
+        <div class="card">
+            <h2>📑 Operaciones de Renta</h2>
+            <div class="form-group">
+                <label>ID del Cliente:</label>
+                <input type="number" id="alqClienteId" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label>ID del Auto:</label>
+                <input type="number" id="alqAutoId" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label>Cantidad de Días:</label>
+                <input type="number" id="alqDias" value="5">
+            </div>
+            <button class="btn-success" onclick="crearAlquiler()">🔑 Inicializar Alquiler</button>
+            
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+            
+            <div class="form-group">
+                <label>ID Alquiler a Finalizar:</label>
+                <input type="number" id="finAlqId" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label>Kilometraje Final de Retorno:</label>
+                <input type="number" id="finKilometraje" placeholder="12850">
+            </div>
+            <button class="btn-danger" onclick="finalizarAlquiler()">🏁 Devolver y Liberar</button>
+        </div>
+    </div>
+
+    <!-- MONITOR DE RESPUESTAS JSON -->
+    <div class="console-title">🖥️ Consola de Respuesta del Servidor (HTTP Status & JSON Output):</div>
+    <div class="console-box" id="salidaConsola">Esperando interacciones de tráfico...</div>
+</div>
+
+<script>
+    const HOST = "http://localhost:8081/api";
+
+    function pintarConsola(status, data) {
+        const consola = document.getElementById("salidaConsola");
+        consola.style.color = status >= 200 && status < 300 ? "#38bdf8" : "#f87171";
+        consola.innerText = `HTTP Status: ${status}\n\n${JSON.stringify(data, null, 2)}`;
+    }
+
+    // REGISTRAR VEHÍCULO
+    function registrarAuto() {
+        const payload = {
+            placa: document.getElementById("autoPlaca").value,
+            marca: document.getElementById("autoMarca").value,
+            modelo: document.getElementById("autoModelo").value,
+            anio: parseInt(document.getElementById("autoAnio").value),
+            precioPorDia: parseFloat(document.getElementById("autoPrecio").value),
+            deposito: parseFloat(document.getElementById("autoDeposito").value),
+            kilometraje: parseInt(document.getElementById("autoKilometraje").value)
+        };
+
+        fetch(`${HOST}/autos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json().then(data => pintarConsola(res.status, data)))
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+
+    // REGISTRAR CLIENTE
+    function registrarCliente() {
+        const payload = {
+            nombre: document.getElementById("clienteNombre").value,
+            tipoDocumento: document.getElementById("clienteTipoDoc").value,
+            documento: parseInt(document.getElementById("clienteDoc").value),
+            telefono: document.getElementById("clienteTel").value,
+            email: document.getElementById("clienteEmail").value
+        };
+
+        fetch(`${HOST}/clientes`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json().then(data => pintarConsola(res.status, data)))
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+
+    // INICIALIZAR ALQUILER
+    function crearAlquiler() {
+        const payload = {
+            clienteId: parseInt(document.getElementById("alqClienteId").value),
+            autoId: parseInt(document.getElementById("alqAutoId").value),
+            cantidadDias: parseInt(document.getElementById("alqDias").value)
+        };
+        fetch(`${HOST}/alquileres`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json().then(data => pintarConsola(res.status, data)))
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+
+    // FINALIZAR ALQUILER
+    function finalizarAlquiler() {
+        const alqId = document.getElementById("finAlqId").value;
+        const payload = {
+            kilometrajeFinal: parseInt(document.getElementById("finKilometraje").value)
+        };
+
+        if (!alqId) {
+            pintarConsola(400, { error: "Debe ingresar el ID del contrato a finalizar." });
+            return;
+        }
+
+        fetch(`${HOST}/alquileres/${alqId}/finalizar`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (res.ok) {
+                return res.json().then(data => pintarConsola(res.status, data));
+            } else {
+                return res.text().then(text => {
+                    try {
+                        pintarConsola(res.status, JSON.parse(text));
+                    } catch(e) {
+                        pintarConsola(res.status, { mensaje: text });
+                    }
+                });
+            }
+        })
+        .catch(err => pintarConsola(500, { error: "Fallo en la comunicación con la API" }));
+    }
+</script>
+</body>
+</html>
