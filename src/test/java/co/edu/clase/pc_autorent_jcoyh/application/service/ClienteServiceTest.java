@@ -2,7 +2,7 @@ package co.edu.clase.pc_autorent_jcoyh.application.service;
 
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.AlquilerRepositoryPort;
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.ClienteRepositoryPort;
-import co.edu.clase.pc_autorent_jcoyh.domain.exception.ClienteNoValidoException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.ClienteException;
 import co.edu.clase.pc_autorent_jcoyh.domain.model.Cliente;
 import co.edu.clase.pc_autorent_jcoyh.domain.model.Alquiler;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +53,7 @@ class ClienteServiceTest {
 
         when(clienteRepositoryPortMock.buscarPorDocumento(1020304050L)).thenReturn(Optional.of(clienteActivoEnDb));
 
-        assertThrows(ClienteNoValidoException.class, () -> {
+        assertThrows(ClienteException.class, () -> {
             clienteService.registrar(clienteDuplicado);
         });
         verify(clienteRepositoryPortMock, never()).guardar(any(Cliente.class));

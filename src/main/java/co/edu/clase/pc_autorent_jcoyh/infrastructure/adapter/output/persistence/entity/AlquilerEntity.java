@@ -33,15 +33,14 @@ public class AlquilerEntity {
     private double valorTotal;
 
     @Column(name = "kilometraje_inicial", nullable = true)
-    private Integer kilometrajeInicial;
+    private Double kilometrajeInicial;
 
     @Column(name = "kilometraje_final", nullable = true)
-    private Integer kilometrajeFinal;
+    private Double kilometrajeFinal;
 
     @Column(nullable = false, length = 20)
-    private String estado; // "ACTIVO", "FINALIZADO"
+    private String estado;
 
-    // Constructor obligatorio requerido por JPA
     public AlquilerEntity() {}
 
     public AlquilerEntity(Long id, 
@@ -52,8 +51,8 @@ public class AlquilerEntity {
                         LocalDate fechaFin, 
                         int cantidadDias, 
                         double valorTotal, 
-                        Integer kilometrajeInicial, 
-                        Integer kilometrajeFinal, 
+                        Double kilometrajeInicial, 
+                        Double kilometrajeFinal, 
                         String estado) {
         
         this.id = id;
@@ -69,37 +68,80 @@ public class AlquilerEntity {
         this.estado = estado;
     }
 
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() { 
+        return id; 
+    }
+    public void setId(Long id) { 
+        this.id = id; 
+    }
 
-    public Long getClienteId() { return clienteId; }
-    public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
+    public Long getClienteId() { 
+        return clienteId; 
+    }
+    public void setClienteId(Long clienteId) { 
+        this.clienteId = clienteId; 
+    }
 
-    public Long getAutoId() { return autoId; }
-    public void setAutoId(Long autoId) { this.autoId = autoId; }
+    public Long getAutoId() { 
+        return autoId; 
+    }
+    public void setAutoId(Long autoId) { 
+        this.autoId = autoId; 
+    }
 
-    public LocalDate getFechaReserva() { return fechaReserva; }
-    public void setFechaReserva(LocalDate fechaReserva) { this.fechaReserva = fechaReserva; }
+    public LocalDate getFechaReserva() { 
+        return fechaReserva; 
+    }
+    public void setFechaReserva(LocalDate fechaReserva) { 
+        this.fechaReserva = fechaReserva; 
+    }
 
-    public LocalDate getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
+    public LocalDate getFechaInicio() { 
+        return fechaInicio; 
+    }
+    public void setFechaInicio(LocalDate fechaInicio) { 
+        this.fechaInicio = fechaInicio; 
+    }
 
-    public LocalDate getFechaFin() { return fechaFin; }
-    public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
+    public LocalDate getFechaFin() { 
+        return fechaFin; 
+    }
+    public void setFechaFin(LocalDate fechaFin) { 
+        this.fechaFin = fechaFin; 
+    }
 
-    public int getCantidadDias() { return cantidadDias; }
-    public void setCantidadDias(int cantidadDias) { this.cantidadDias = cantidadDias; }
+    public int getCantidadDias() { 
+        return cantidadDias; 
+    }
+    public void setCantidadDias(int cantidadDias) { 
+        this.cantidadDias = cantidadDias; 
+    }
 
-    public double getValorTotal() { return valorTotal; }
-    public void setValorTotal(double valorTotal) { this.valorTotal = valorTotal; }
+    public double getValorTotal() { 
+        return valorTotal; 
+    }
+    public void setValorTotal(double valorTotal) { 
+        this.valorTotal = valorTotal; 
+    }
 
-    public Integer getKilometrajeInicial() { return kilometrajeInicial; }
-    public void setKilometrajeInicial(int kilometrajeInicial) { this.kilometrajeInicial = kilometrajeInicial; }
+    public Double getKilometrajeInicial() { 
+        return kilometrajeInicial; 
+    }
+    public void setKilometrajeInicial(Double kilometrajeInicial) { 
+        this.kilometrajeInicial = kilometrajeInicial; 
+    }
 
-    public Integer getKilometrajeFinal() { return kilometrajeFinal; }
-    public void setKilometrajeFinal(int kilometrajeFinal) { this.kilometrajeFinal = kilometrajeFinal; }
+    public Double getKilometrajeFinal() { 
+        return kilometrajeFinal; 
+    }
+    public void setKilometrajeFinal(Double kilometrajeFinal) { 
+        this.kilometrajeFinal = kilometrajeFinal; 
+    }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public String getEstado() { 
+        return estado; 
+    }
+    public void setEstado(String estado) { 
+        this.estado = estado; 
+    }
 }

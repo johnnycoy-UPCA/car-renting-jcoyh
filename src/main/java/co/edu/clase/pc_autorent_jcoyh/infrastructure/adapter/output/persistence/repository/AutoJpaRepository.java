@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface AutoJpaRepository extends JpaRepository<AutoEntity, Long> {
     List<AutoEntity> findByPlacaIgnoreCase(String placa);
+    List<AutoEntity> findByEstado(String estado);
 }

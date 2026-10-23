@@ -1,6 +1,6 @@
 package co.edu.clase.pc_autorent_jcoyh.domain.model;
 
-import co.edu.clase.pc_autorent_jcoyh.domain.exception.AutoNoDisponibleException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.AutoException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +16,7 @@ class AutoTest {
         auto.setEstado("ALQUILADO"); // Forzamos el estado conflictivo
 
         // 2. Llamo a la excepción para confirmar su comportamiento
-        assertThrows(AutoNoDisponibleException.class, () -> {
+        assertThrows(AutoException.class, () -> {
             auto.ingresarAMantenimiento();
         }, "Se esperaba que el dominio rechazara el ingreso a taller de un carro alquilado");
     }

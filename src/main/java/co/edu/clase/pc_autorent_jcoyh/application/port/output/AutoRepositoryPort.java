@@ -6,7 +6,8 @@ import java.util.List;
 
 public interface AutoRepositoryPort {
     Auto guardar(Auto auto);
-    Optional<Auto> buscarPorId(Long id);
-    Optional<Auto> buscarPorPlaca(String placa); // IMPLEMENTADO DESPUÉS DE LA PRIMERA PRUEBA
-    List<Auto> listarTodos(); // IMPLEMENTADO PARA LA CONSULTA EN FRONT-END index_v2.html
+    Optional<Auto> buscarPorId(Long autoId);
+    List<Auto> buscarPorPlaca(String autoPlaca);
+    List<Auto> listarTodos();
+    List<Auto> buscarDisponibles();
 }

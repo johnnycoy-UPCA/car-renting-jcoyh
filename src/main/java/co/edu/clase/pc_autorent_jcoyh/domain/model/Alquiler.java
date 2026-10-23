@@ -1,38 +1,66 @@
 package co.edu.clase.pc_autorent_jcoyh.domain.model;
 
-import co.edu.clase.pc_autorent_jcoyh.domain.exception.AlquilerNoValidoException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.AlquilerException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.MensajesError;
+
 import java.time.LocalDate;
-// import java.time.temporal.ChronoUnit;
+import java.time.temporal.ChronoUnit;
 
 public class Alquiler {
-    private Long id;
-    private Long clienteId;
-    private Long autoId;
-    private LocalDate fechaReserva;
+    private final Long id;
+    private final Long clienteId;
+    private final Long autoId;
+    private final LocalDate fechaReserva;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private int cantidadDias;
     private double valorTotal;
-    private Integer kilometrajeInicial; // Antes era int, lo tuve que cambiar a Integer para que acepte null
-    private Integer kilometrajeFinal;   // Antes era int, lo tuve que cambiar a Integer para que acepte null
-    private String estado; // "ACTIVO", "FINALIZADO"
+    private Double kilometrajeInicial;
+    private Double kilometrajeFinal;
+    private String estado;
 
-    public Alquiler() {
-        this.fechaReserva = LocalDate.now();
+    public Alquiler(Long id, 
+                    Long clienteId, 
+                    Long autoId, 
+                    LocalDate fechaReserva, 
+                    LocalDate fechaInicio, 
+                    LocalDate fechaFin, 
+                    int cantidadDias, 
+                    double valorTotal, 
+                    Double kilometrajeInicial, 
+                    Double kilometrajeFinal, 
+                    String estado) {
+
+        this.id = id;
+        this.clienteId = clienteId;
+        this.autoId = autoId;
+        this.fechaReserva = fechaReserva != null 
+                            ? fechaReserva 
+                            : LocalDate.now();
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+        this.cantidadDias = cantidadDias;
+        this.valorTotal = valorTotal;
+        this.kilometrajeInicial = kilometrajeInicial;
+        this.kilometrajeFinal = kilometrajeFinal;
+        this.estado = estado != null 
+                    ? estado 
+                    : EstadosNegocio.ALQUILER_PENDIENTE;
     }
 
-    // Configurar alquiler e ingresar el kilometraje de entrega
-    public void calcularYConfigurarAlquiler(double precioPorDia, LocalDate fechaInicioDigitada) {
+    public void calcularYConfigurarAlquiler(double precioPorDia, 
+                                            LocalDate fechaInicioDigitada) {
+
         if (this.cantidadDias <= 0) {
-            throw new AlquilerNoValidoException("La cantidad de días debe ser mayor que cero.");
+            throw new AlquilerException(MensajesError.ALQUILER_CANTIDAD_DIAS_INVALIDA);
         }
         if (fechaInicioDigitada == null) {
-            throw new AlquilerNoValidoException("La fecha de inicio es obligatoria.");
+            throw new AlquilerException(MensajesError.ALQUILER_FECHA_INICIO_OBLIGATORIA);
         }
 
         if (fechaInicioDigitada.isBefore(LocalDate.now())) {
-            throw new AlquilerNoValidoException(
-                "Operación Denegada: La fecha de inicio (" + fechaInicioDigitada + ") no puede anteior a la fecha de hoy: " + LocalDate.now()
+            throw new AlquilerException(
+                String.format(MensajesError.ALQUILER_FECHA_PASADA, fechaInicioDigitada)
             );
         }
 
@@ -40,112 +68,119 @@ public class Alquiler {
         this.fechaInicio = fechaInicioDigitada;
         this.fechaFin = this.fechaInicio.plusDays(this.cantidadDias);
 
-        if (fechaInicioDigitada.isAfter(LocalDate.now())) {
-            this.estado = "PENDIENTE"; // Es una RESERVA
-            this.kilometrajeInicial = null; // Se especificará al momento de iniciar el Alquiler
+        if (!fechaInicioDigitada.isAfter(LocalDate.now())) {
+            this.estado = EstadosNegocio.ALQUILER_ACTIVO;
         } else {
-            this.estado = "ACTIVO";    // El kilometraje se ingresará desde el Service
+            this.kilometrajeInicial = null;
         }
     }
 
-    public void iniciarReserva(int kilometrajeActualAuto) {
-        if (!"PENDIENTE".equals(this.estado)) {
-            throw new AlquilerNoValidoException("Operación Denegada: Solo se pueden iniciar contratos que estén en estado PENDIENTE.");
+    public void iniciarReserva(double kilometrajeActualAuto) {
+        if (!EstadosNegocio.ALQUILER_PENDIENTE.equals(this.estado)) {
+            throw new AlquilerException(MensajesError.ALQUILER_INICIO_RESERVA_INVALIDO);
         }
         this.kilometrajeInicial = kilometrajeActualAuto;
-        this.estado = "ACTIVO";
+        this.estado = EstadosNegocio.ALQUILER_ACTIVO;
     }
 
-    public void procesarDevolucionConReliquidacion(LocalDate fechaEntregaReal, int kilometrajeFinalReal, double precioPorDia) {
-        if (!"ACTIVO".equals(this.estado)) {
-            throw new AlquilerNoValidoException("Operación Denegada: Solo se pueden finalizar alquileres en estado ACTIVO.");
+    public void procesarDevolucion(LocalDate fechaEntregaReal, 
+                                Double kilometrajeFinalReal, 
+                                double precioPorDia) {
+
+        if (!EstadosNegocio.ALQUILER_ACTIVO.equals(this.estado)) {
+            throw new AlquilerException(MensajesError.ALQUILER_DEVOLUCION_ESTADO_INVALIDO);
         }
-        if ("FINALIZADO".equals(this.estado)) {
-            throw new AlquilerNoValidoException("No se puede finalizar dos veces el mismo alquiler.");
+        if (EstadosNegocio.ALQUILER_FINALIZADO.equals(this.estado)) {
+            throw new AlquilerException(MensajesError.ALQUILER_FINALIZAR_DOBLE);
         }
         if (this.kilometrajeInicial != null && kilometrajeFinalReal < this.kilometrajeInicial) {
-            throw new AlquilerNoValidoException("Inconsistencia Mecánica: El kilometraje final (" + kilometrajeFinalReal +
-                ") no puede ser menor que el inicial (" + this.kilometrajeInicial + ").");
+            throw new AlquilerException(
+                String.format(MensajesError.AUTO_KM_MENOR, kilometrajeFinalReal, this.kilometrajeInicial)
+            );
         }
 
         this.fechaFin = fechaEntregaReal;
         
-        // long diasCalculados = ChronoUnit.DAYS.between(this.fechaInicio, this.fechaFin);
-        long diasCalculados = this.fechaFin.toEpochDay() - this.fechaInicio.toEpochDay();
-        this.cantidadDias = (diasCalculados <= 0) ? 1 : (int) diasCalculados; // Mínimo cobro de 1 día
+        long diasCalculados = ChronoUnit.DAYS.between(this.fechaInicio, this.fechaFin);
+        this.cantidadDias = (diasCalculados <= 0) ? 1 : (int) diasCalculados;
         
-        // Reliquidación del total
         this.valorTotal = precioPorDia * this.cantidadDias;
         this.kilometrajeFinal = kilometrajeFinalReal;
-        this.estado = "FINALIZADO";
+        this.estado = EstadosNegocio.ALQUILER_FINALIZADO;
     }
 
-    public void cancelar() {
-/*        if ("FINALIZADO".equals(this.estado)) {
-            throw new AlquilerNoValidoException(
-                "Operación Denegada: No se puede cerrar un contrato de alquiler que ya ha sido FINALIZADO."
-            );
-        }
-        if ("CANCELADO".equals(this.estado)) {
-            throw new AlquilerNoValidoException(
-                "Operación Denegada: El contrato de alquiler ya se encuentra en estado CANCELADO."
-            );
-        }
-*/        if (!"ACTIVO".equals(this.estado) && !"PENDIENTE".equals(this.estado)) {
-            throw new AlquilerNoValidoException(
-                "Operación Denegada: Solo se pueden cancelar contratos en estado ACTIVO o PENDIENTE. El contrato se encuentra " + this.estado
+    public void cancelarAlquiler() {
+
+        if (!EstadosNegocio.ALQUILER_ACTIVO.equals(this.estado) && !EstadosNegocio.ALQUILER_PENDIENTE.equals(this.estado)) {
+            throw new AlquilerException(
+                String.format(MensajesError.ALQUILER_CANCELACION_INVALIDA, this.estado)
             );
         }
 
-        this.estado = "CANCELADO";
+        this.estado = EstadosNegocio.ALQUILER_CANCELADO;
     }
 
-    // Verificar que las fechas no se crucen
-    public boolean seCruzaConPeriodo(LocalDate nuevaFechaInicio, int nuevosDias) {
-        if ("CANCELADO".equalsIgnoreCase(this.estado) || "FINALIZADO".equalsIgnoreCase(this.estado)) {
-            return false; // Si está finalizado o cancelado, no genera bloqueo
+    public boolean seCruzaConPeriodo(LocalDate nuevaFechaInicio, 
+                                    int nuevosDias) {
+                                        
+        if (EstadosNegocio.ALQUILER_CANCELADO.equalsIgnoreCase(this.estado) || 
+            EstadosNegocio.ALQUILER_FINALIZADO.equalsIgnoreCase(this.estado)) {
+            return false;
         }
 
         LocalDate nuevoFin = nuevaFechaInicio.plusDays(nuevosDias);
-        boolean seCruzaConFechaInicio = (nuevaFechaInicio.isBefore(this.fechaFin.plusDays(1)) || nuevaFechaInicio.isEqual(this.fechaFin.plusDays(1)));
-        boolean seCruzaConFechaFin = (nuevoFin.isAfter(this.fechaInicio) || nuevoFin.isEqual(this.fechaInicio));
-        boolean bloqueoPorEstado = "ACTIVO".equalsIgnoreCase(this.estado) || "PENDIENTE".equalsIgnoreCase(this.estado);
+        
+        boolean seCruzaConFechas = !nuevaFechaInicio.isAfter(this.fechaFin) && 
+                                !nuevoFin.isBefore(this.fechaInicio);
 
-        return seCruzaConFechaInicio && seCruzaConFechaFin && bloqueoPorEstado;
+        boolean bloqueoPorEstado = EstadosNegocio.ALQUILER_ACTIVO.equalsIgnoreCase(this.estado) || 
+                                EstadosNegocio.ALQUILER_PENDIENTE.equalsIgnoreCase(this.estado);
+
+        return seCruzaConFechas && bloqueoPorEstado;
     }
 
 
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() { 
+        return id; 
+    }
 
-    public Long getClienteId() { return clienteId; }
-    public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
+    public Long getClienteId() { 
+        return clienteId; 
+    }
 
-    public Long getAutoId() { return autoId; }
-    public void setAutoId(Long autoId) { this.autoId = autoId; }
+    public Long getAutoId() { 
+        return autoId; 
+    }
 
-    public LocalDate getFechaReserva() { return fechaReserva; }
-    public void setFechaReserva(LocalDate fechaReserva) { this.fechaReserva = fechaReserva; }
+    public LocalDate getFechaReserva() { 
+        return fechaReserva; 
+    }
 
-    public LocalDate getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
+    public LocalDate getFechaInicio() { 
+        return fechaInicio; 
+    }
 
-    public LocalDate getFechaFin() { return fechaFin; }
-    public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
+    public LocalDate getFechaFin() { 
+        return fechaFin; 
+    }
 
-    public int getCantidadDias() { return cantidadDias; }
-    public void setCantidadDias(int cantidadDias) { this.cantidadDias = cantidadDias; }
+    public int getCantidadDias() { 
+        return cantidadDias; 
+    }
 
-    public double getValorTotal() { return valorTotal; }
-    public void setValorTotal(double valorTotal) { this.valorTotal = valorTotal; }
+    public double getValorTotal() { 
+        return valorTotal; 
+    }
 
-    public Integer getKilometrajeInicial() { return kilometrajeInicial; }
-    public void setKilometrajeInicial(Integer kilometrajeInicial) { this.kilometrajeInicial = kilometrajeInicial; }
+    public Double getKilometrajeInicial() { 
+        return kilometrajeInicial; 
+    }
 
-    public Integer getKilometrajeFinal() { return kilometrajeFinal; }
-    public void setKilometrajeFinal(Integer kilometrajeFinal) { this.kilometrajeFinal = kilometrajeFinal; }
+    public Double getKilometrajeFinal() { 
+        return kilometrajeFinal; 
+    }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public String getEstado() { 
+        return estado; 
+    }
 }

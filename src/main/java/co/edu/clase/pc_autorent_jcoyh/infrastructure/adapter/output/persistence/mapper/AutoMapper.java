@@ -7,9 +7,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class AutoMapper {
 
-    // Convierte de la Base de Datos (Entity) hacia el Negocio (Domain)
     public Auto toDomain(AutoEntity entity) {
-        if (entity == null) return null;
+        if (entity == null) {
+            return null;
+        }
+
         return new Auto(
             entity.getId(),
             entity.getPlaca(),
@@ -23,9 +25,11 @@ public class AutoMapper {
         );
     }
 
-    // Convierte del Negocio (Domain) hacia la Base de Datos (Entity)
     public AutoEntity toEntity(Auto domain) {
-        if (domain == null) return null;
+        if (domain == null) {
+            return null;
+        }
+        
         return new AutoEntity(
             domain.getId(),
             domain.getPlaca(),

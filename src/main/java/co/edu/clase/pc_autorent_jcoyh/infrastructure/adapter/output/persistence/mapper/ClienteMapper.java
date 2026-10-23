@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 public class ClienteMapper {
 
     public Cliente toDomain(ClienteEntity entity) {
-        if (entity == null) return null;
+        if (entity == null) {
+            return null;
+        }
+
         return new Cliente(
             entity.getId(),
             entity.getNombre(),
@@ -21,7 +24,10 @@ public class ClienteMapper {
     }
 
     public ClienteEntity toEntity(Cliente domain) {
-        if (domain == null) return null;
+        if (domain == null) {
+            return null;
+        }
+        
         return new ClienteEntity(
             domain.getId(),
             domain.getNombre(),

@@ -1,21 +1,31 @@
 package co.edu.clase.pc_autorent_jcoyh.domain.model;
 
-import co.edu.clase.pc_autorent_jcoyh.domain.exception.AutoNoDisponibleException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.AutoException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.MensajesError;
 
 public class Auto {
-    private Long id;
-    private String placa;
-    private String marca;
-    private String modelo;
-    private int anio;
+    private final Long id;
+    private final String placa;
+    private final String marca;
+    private final String modelo;
+    private final int anio;
+
     private double precioPorDia;
-    private double deposito;      // NUEVO: Valor inicial obligatorio
-    private int kilometraje;      // NUEVO: Kilómetros acumulados totales
-    private String estado; // "DISPONIBLE", "ALQUILADO", "MANTENIMIENTO"
+    private double deposito;
+    private Double kilometraje;
+    private String estado;
 
-    public Auto() {}
 
-    public Auto(Long id, String placa, String marca, String modelo, int anio, double precioPorDia, double deposito, int kilometraje, String estado) {
+    public Auto(Long id, 
+                String placa, 
+                String marca, 
+                String modelo, 
+                int anio, 
+                double precioPorDia, 
+                double deposito, 
+                Double kilometraje, 
+                String estado) {
+                    
         this.id = id;
         this.placa = placa;
         this.marca = marca;
@@ -23,94 +33,114 @@ public class Auto {
         this.anio = anio;
         this.precioPorDia = precioPorDia;
         this.deposito = deposito;
-        this.kilometraje = kilometraje;
-        this.estado = estado;
+        this.kilometraje = kilometraje != null 
+                        ? kilometraje 
+                        : 0.0;
+        this.estado = estado != null 
+                    ? estado 
+                    : EstadosNegocio.AUTO_DISPONIBLE;
 
     }
 
-    private void validarYActualizarKilometraje(int kilometrajeNuevo) {
+    private void validarYActualizarKilometraje(Double kilometrajeNuevo) {
         if (kilometrajeNuevo < this.kilometraje) {
-            throw new AutoNoDisponibleException("Inconsistencia: El kilometraje ingresado (" + kilometrajeNuevo +
-                ") no puede ser menor que el kilometraje histórico registrado (" + this.kilometraje + ") del vehículo.");
+            throw new AutoException(
+                String.format(MensajesError.AUTO_KM_MENOR, kilometrajeNuevo, this.kilometraje)
+            );
         }
+
         this.kilometraje = kilometrajeNuevo;
     }
 
-    public void alquilar() {
-        if (!"DISPONIBLE".equals(this.estado)) {
-            throw new AutoNoDisponibleException("El auto con placa " + placa + " no está DISPONIBLE.");
+    public void alquilarAuto() {
+        if (!EstadosNegocio.AUTO_DISPONIBLE.equals(this.estado)) {
+            throw new AutoException(
+                String.format(MensajesError.AUTO_NO_DISPONIBLE, this.placa, this.estado)
+            );
         }
-        this.estado = "ALQUILADO";
+
+        this.estado = EstadosNegocio.AUTO_ALQUILADO;
     }
 
-    public void liberar() {
-        this.estado = "DISPONIBLE";
+    public void liberarDeAlquiler() {
+
+        this.estado = EstadosNegocio.AUTO_DISPONIBLE;
     }
 
-    public void registrarRetornoDeAlquiler(int kilometrajeFinalContrato) {
+    public void registrarRetornoAuto(Double kilometrajeFinalContrato) {
         validarYActualizarKilometraje(kilometrajeFinalContrato);
-        liberar();
+
+        this.estado = EstadosNegocio.AUTO_DISPONIBLE;
     }
 
     public void ingresarAMantenimiento() {
-        if ("MANTENIMIENTO".equals(this.estado)) {
-            throw new AutoNoDisponibleException("Operación Denegada: El vehículo con placa " + this.placa +
-                                                " ya se encuentra en MANTENIMIENTO");
+        if (EstadosNegocio.AUTO_MANTENIMIENTO.equals(this.estado)) {
+            throw new AutoException(
+                String.format(MensajesError.AUTO_MANTENIMIENTO_DUPLICADO, this.placa)
+            );
         }
-        
-        if (!"DISPONIBLE".equals(this.estado)) {
-            throw new AutoNoDisponibleException("Operación Denegada: El vehículo con placa " + this.placa + 
-                                                " no puede ingresar a mantenimiento porque su estado actual es " + this.estado + ".");
+        if (!EstadosNegocio.AUTO_DISPONIBLE.equals(this.estado)) {
+            throw new AutoException(
+                String.format(MensajesError.AUTO_MANTENIMIENTO_ESTADO_INVALIDO, this.placa, this.estado)
+            );
         }
-        
-        this.estado = "MANTENIMIENTO";
+
+        this.estado = EstadosNegocio.AUTO_MANTENIMIENTO;
     }
 
-    public void salirDeMantenimiento(int kilometrajeRetorno) {
-        if (!"MANTENIMIENTO".equals(this.estado)) {
-            throw new AutoNoDisponibleException("Operación Denegada: El vehículo con placa " + this.placa + 
-                                                " no se encuentra actualmente en estado de MANTENIMIENTO.");
+    public void salirDeMantenimiento(Double kilometrajeRetorno) {
+        if (!EstadosNegocio.AUTO_MANTENIMIENTO.equals(this.estado)) {
+            throw new AutoException(
+                String.format(MensajesError.AUTO_MANTENIMIENTO_SALIDA_INVALIDA, this.placa)
+            );
         }
-
-        validarYActualizarKilometraje(kilometrajeRetorno);
-
-        this.estado = "DISPONIBLE";
+        registrarRetornoAuto(kilometrajeRetorno);
     }
 
-    public void desactivar() {
-        if ("ALQUILADO".equals(this.estado)) {
-            throw new AutoNoDisponibleException("Operación Denegada: El vehículo con placa " + this.placa + 
-                " no puede ser dado de baja porque se encuentra bajo un contrato de alquiler ACTIVO vigente.");
+    public void desactivarAuto() {
+        if (EstadosNegocio.AUTO_ALQUILADO.equals(this.estado)) {
+            throw new AutoException(
+                String.format(MensajesError.AUTO_BAJA_CONTRATO_ACTIVO, this.placa)
+            );
         }
-        this.estado = "INACTIVO";
+
+        this.estado = EstadosNegocio.AUTO_INACTIVO;
     }
 
 
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getPlaca() { return placa; }
-    public void setPlaca(String placa) { this.placa = placa; }
-
-    public String getMarca() { return marca; }
-    public void setMarca(String marca) { this.marca = marca; }
-
-    public String getModelo() { return modelo; }
-    public void setModelo(String modelo) { this.modelo = modelo; }
-
-    public int getAnio() { return anio; }
-    public void setAnio(int anio) { this.anio = anio; }
-
-    public double getPrecioPorDia() { return precioPorDia; }
-    public void setPrecioPorDia(double precioPorDia) { this.precioPorDia = precioPorDia; }
-
-    public double getDeposito() { return deposito; }
-    public void setDeposito(double deposito) { this.deposito = deposito; }
-
-    public int getKilometraje() { return kilometraje; }
-    public void setKilometraje(int kilometraje) { this.kilometraje = kilometraje; }
-
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public Long getId() { 
+        return id; 
+    }
+    
+    public String getPlaca() { 
+        return placa; 
+    }
+    
+    public String getMarca() { 
+        return marca; 
+    }
+    
+    public String getModelo() { 
+        return modelo; 
+    }
+    
+    public int getAnio() { 
+        return anio; 
+    }
+    
+    public double getPrecioPorDia() { 
+        return precioPorDia; 
+    }
+    
+    public double getDeposito() { 
+        return deposito; 
+    }
+    
+    public Double getKilometraje() { 
+        return kilometraje; 
+    }
+    
+    public String getEstado() { 
+        return estado; 
+    }
 }

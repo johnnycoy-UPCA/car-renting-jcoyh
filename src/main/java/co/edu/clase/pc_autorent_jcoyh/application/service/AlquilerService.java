@@ -1,8 +1,5 @@
 package co.edu.clase.pc_autorent_jcoyh.application.service;
 
-import java.time.LocalDate;
-import org.springframework.transaction.annotation.Transactional;
-
 import co.edu.clase.pc_autorent_jcoyh.application.port.input.CancelarAlquilerUseCase;
 import co.edu.clase.pc_autorent_jcoyh.application.port.input.CrearAlquilerUseCase;
 import co.edu.clase.pc_autorent_jcoyh.application.port.input.FinalizarAlquilerUseCase;
@@ -10,12 +7,20 @@ import co.edu.clase.pc_autorent_jcoyh.application.port.input.IniciarReservaUseCa
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.AlquilerRepositoryPort;
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.AutoRepositoryPort;
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.ClienteRepositoryPort;
-import co.edu.clase.pc_autorent_jcoyh.domain.exception.AlquilerNoValidoException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.AlquilerException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.NoEncontradoException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.MensajesError;
 import co.edu.clase.pc_autorent_jcoyh.domain.model.Alquiler;
 import co.edu.clase.pc_autorent_jcoyh.domain.model.Auto;
 import co.edu.clase.pc_autorent_jcoyh.domain.model.Cliente;
+import co.edu.clase.pc_autorent_jcoyh.domain.model.EstadosNegocio;
 
-public class AlquilerService implements CrearAlquilerUseCase, FinalizarAlquilerUseCase, CancelarAlquilerUseCase, IniciarReservaUseCase {
+import java.time.LocalDate;
+ 
+public class AlquilerService implements CrearAlquilerUseCase, 
+                                        FinalizarAlquilerUseCase, 
+                                        CancelarAlquilerUseCase, 
+                                        IniciarReservaUseCase {
 
     private final AlquilerRepositoryPort alquilerRepositoryPort;
     private final AutoRepositoryPort autoRepositoryPort;
@@ -24,110 +29,160 @@ public class AlquilerService implements CrearAlquilerUseCase, FinalizarAlquilerU
     public AlquilerService(AlquilerRepositoryPort alquilerRepositoryPort, 
                         AutoRepositoryPort autoRepositoryPort,
                         ClienteRepositoryPort clienteRepositoryPort) {
+
         this.alquilerRepositoryPort = alquilerRepositoryPort;
         this.autoRepositoryPort = autoRepositoryPort;
         this.clienteRepositoryPort = clienteRepositoryPort;
     }
 
-    @Override
-    @Transactional
-    public Alquiler crear(Long clienteId, Long autoId, int cantidadDias, LocalDate fechaInicio) {
+    private Auto validarClienteYAuto(Long clienteId, 
+                                    Long autoId, 
+                                    Long alquilerId, 
+                                    LocalDate fechaInicio, 
+                                    int cantidadDias) {
+
         Cliente cliente = clienteRepositoryPort.buscarPorId(clienteId)
-            .orElseThrow(() -> new RuntimeException("El documento ingresado no se encuentra registrado en el sistema."));
+                            .orElseThrow(() -> new NoEncontradoException(
+                                    String.format(MensajesError.CLIENTE_NO_REGISTRADO, clienteId)
+                                )
+                            );
+
+        if (EstadosNegocio.CLIENTE_INACTIVO.equalsIgnoreCase(cliente.getEstado())) {
+            throw new AlquilerException(
+                    String.format(MensajesError.CLIENTE_INACTIVO, cliente.getDocumento())
+            );
+        }
 
         Auto auto = autoRepositoryPort.buscarPorId(autoId)
-            .orElseThrow(() -> new RuntimeException("El vehículo solicitado no se encuentra registrado en el sistema."));
+                        .orElseThrow(() -> new NoEncontradoException(
+                                String.format(MensajesError.AUTO_NO_REGISTRADO, autoId)
+                            )
+                        );
 
-        if ("INACTIVO".equalsIgnoreCase(cliente.getEstado())) {
-            throw new RuntimeException("Operación denegada: El cliente " + cliente.getNombre() + " se encuentra en estado INACTIVO.");
+        if (!EstadosNegocio.AUTO_DISPONIBLE.equals(auto.getEstado())) {
+            throw new AlquilerException(
+                    String.format(MensajesError.AUTO_NO_DISPONIBLE, auto.getPlaca(), auto.getEstado())
+            );
         }
 
-        boolean seCruzaConAlquilerVigente = alquilerRepositoryPort.listarTodos().stream()
-            .anyMatch(alquiler -> alquiler.getAutoId().equals(autoId) && alquiler.seCruzaConPeriodo(fechaInicio, cantidadDias));
+        boolean seCruzaConAlquilerVigente = alquilerRepositoryPort
+                                                .listarTodos()
+                                                .stream()
+                                                .filter(alq -> alq.getAutoId().equals(auto.getId()))
+                                                .filter(alq -> alquilerId == null || !alq.getId().equals(alquilerId))
+                                                .anyMatch(alq -> alq.seCruzaConPeriodo(fechaInicio, cantidadDias));
 
         if (seCruzaConAlquilerVigente) {
-            Alquiler conflictoenContrato = alquilerRepositoryPort.listarTodos().stream()
-                .filter(a -> a.getAutoId().equals(autoId) && a.seCruzaConPeriodo(fechaInicio, cantidadDias))
-                // .map(Alquiler::getFechaFin) // Este método no verifica datos, generó warning.
-                // .map(alq -> alq.getFechaFin()) // Cambio por la declaración de variable.
-                .findFirst()
-                .orElse(null);
-            
-            String rangoEnMensaje = (conflictoenContrato != null)
-                ? "del " + conflictoenContrato.getFechaInicio() + " al " + conflictoenContrato.getFechaFin() + "(" + conflictoenContrato.getEstado() + ")"
-                : "solicitado";
-            
-            throw new AlquilerNoValidoException("Operación Denegada: El vehículo con placa " + auto.getPlaca() +
-                    " cuenta con un alquiler ACTIVO en la fecha ingresada. " + rangoEnMensaje);
+
+            throw new AlquilerException(
+                String.format(MensajesError.ALQUILER_FECHAS_CRUZADAS, auto.getPlaca())
+            );
         }
+
+        return auto;
+    }
+
+    @Override
+    public Alquiler crearAlquiler(Alquiler alquiler) {
+        Auto auto = validarClienteYAuto(alquiler.getClienteId(), 
+                                        alquiler.getAutoId(), 
+                                        null, 
+                                        alquiler.getFechaInicio(), 
+                                        alquiler.getCantidadDias());
+
+        Alquiler nuevoAlquiler = new Alquiler(
+                                    null, 
+                                    alquiler.getClienteId(), 
+                                    alquiler.getAutoId(), 
+                                    LocalDate.now(), 
+                                    alquiler.getFechaInicio(), 
+                                    null, 
+                                    alquiler.getCantidadDias(), 
+                                    0.0, 
+                                    auto.getKilometraje(), 
+                                    null, 
+                                    EstadosNegocio.ALQUILER_PENDIENTE
+                                );
         
-        Alquiler alquiler = new Alquiler();
-        alquiler.setClienteId(clienteId);
-        alquiler.setAutoId(autoId);
-        alquiler.setCantidadDias(cantidadDias);
+        nuevoAlquiler.calcularYConfigurarAlquiler(auto.getPrecioPorDia(), 
+                                                alquiler.getFechaInicio());
+
+        if (EstadosNegocio.ALQUILER_ACTIVO.equals(nuevoAlquiler.getEstado())) {
+            auto.alquilarAuto();
+            autoRepositoryPort.guardar(auto);
+        }
+
+        return alquilerRepositoryPort.guardar(nuevoAlquiler);
+    }
+
+    @Override
+    public Alquiler finalizarAlquiler(Long alquilerId, 
+                                    Double kilometrajeFinal, 
+                                    LocalDate fechaEntregaReal) {
+
+        Alquiler alquiler = alquilerRepositoryPort.buscarPorId(alquilerId)
+                                .orElseThrow(() -> new NoEncontradoException(
+                                        String.format(MensajesError.ALQUILER_NO_ENCONTRADO, alquilerId)
+                                    )
+                                );
+
+        Auto auto = autoRepositoryPort.buscarPorId(alquiler.getAutoId())
+                        .orElseThrow(() -> new NoEncontradoException(
+                                String.format(MensajesError.AUTO_NO_REGISTRADO, alquiler.getAutoId())
+                            )
+                        );
+
+        LocalDate fechaFinalizacion = (fechaEntregaReal != null) 
+                                    ? fechaEntregaReal 
+                                    : LocalDate.now();
+
+        alquiler.procesarDevolucion(fechaFinalizacion, 
+                                    kilometrajeFinal, 
+                                    auto.getPrecioPorDia());
+                                    
+        auto.registrarRetornoAuto(kilometrajeFinal);
+
+        autoRepositoryPort.guardar(auto);
+        return alquilerRepositoryPort.guardar(alquiler);
+    }
+
+    @Override
+    public Alquiler iniciarReserva(Long alquilerId) {
+        Alquiler alquiler = alquilerRepositoryPort.buscarPorId(alquilerId)
+                                .orElseThrow(() -> new NoEncontradoException(
+                                        String.format(MensajesError.ALQUILER_NO_ENCONTRADO, alquilerId)
+                                    )
+                                );
+
+        Auto auto = validarClienteYAuto(alquiler.getClienteId(), 
+                                        alquiler.getAutoId(), 
+                                        alquiler.getId(), 
+                                        alquiler.getFechaInicio(), 
+                                        alquiler.getCantidadDias());
         
-        alquiler.calcularYConfigurarAlquiler(auto.getPrecioPorDia(), fechaInicio);
-
-        if ("PENDIENTE".equals(alquiler.getEstado())) {
-            auto.setEstado("RESERVADO");
-        } else {
-            auto.setEstado("ALQUILADO");
-            alquiler.setKilometrajeInicial(auto.getKilometraje());
-        }
+        alquiler.iniciarReserva(auto.getKilometraje());
+        auto.alquilarAuto();
 
         autoRepositoryPort.guardar(auto);
         return alquilerRepositoryPort.guardar(alquiler);
     }
 
     @Override
-    @Transactional
-    public Alquiler iniciar(Long alquilerId, int kilometrajeInicialReal) {
+    public Alquiler cancelarAlquiler(Long alquilerId) {
         Alquiler alquiler = alquilerRepositoryPort.buscarPorId(alquilerId)
-            .orElseThrow(() -> new RuntimeException("Contrato de reserva no encontrado."));
+                                .orElseThrow(() -> new NoEncontradoException(
+                                        String.format(MensajesError.ALQUILER_NO_ENCONTRADO, alquilerId)
+                                    )
+                                );
 
         Auto auto = autoRepositoryPort.buscarPorId(alquiler.getAutoId())
-            .orElseThrow(() -> new RuntimeException("Vehículo asociado no encontrado."));
+                        .orElseThrow(() -> new NoEncontradoException(
+                                String.format(MensajesError.AUTO_NO_REGISTRADO, alquiler.getAutoId())
+                            )
+                        );
 
-        alquiler.iniciarReserva(kilometrajeInicialReal);
-
-        auto.setEstado("ALQUILADO");
-
-        autoRepositoryPort.guardar(auto);
-        return alquilerRepositoryPort.guardar(alquiler);
-    }
-
-    @Override
-    @Transactional 
-    public Alquiler finalizar(Long alquilerId, int kilometrajeFinal, LocalDate fechaEntregaReal) {
-        Alquiler alquiler = alquilerRepositoryPort.buscarPorId(alquilerId)
-            .orElseThrow(() -> new RuntimeException("Contrato de alquiler no encontrado con ID: " + alquilerId));
-
-        Auto auto = autoRepositoryPort.buscarPorId(alquiler.getAutoId())
-            .orElseThrow(() -> new RuntimeException("Vehículo asociado al contrato no encontrado."));
-
-        try {
-            alquiler.procesarDevolucionConReliquidacion(fechaEntregaReal, kilometrajeFinal, auto.getPrecioPorDia());
-            auto.registrarRetornoDeAlquiler(kilometrajeFinal);
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Error en el vehículo con placa " + auto.getPlaca() + ": " + e.getMessage());
-        }
-
-        autoRepositoryPort.guardar(auto);
-        return alquilerRepositoryPort.guardar(alquiler);
-    }
-
-    @Override
-    @Transactional 
-    public Alquiler cancelar(Long alquilerId) {
-        // Buscar ALQUILERES.ID en H2
-        Alquiler alquiler = alquilerRepositoryPort.buscarPorId(alquilerId)
-            .orElseThrow(() -> new RuntimeException("Contrato de alquiler no encontrado con ID: " + alquilerId));
-
-        // Buscar ALQUILERES.AUTO_ID
-        Auto auto = autoRepositoryPort.buscarPorId(alquiler.getAutoId())
-            .orElseThrow(() -> new RuntimeException("Vehículo asociado al contrato no encontrado."));
-
-        alquiler.cancelar();
+        alquiler.cancelarAlquiler();
+        auto.liberarDeAlquiler();
 
         autoRepositoryPort.guardar(auto);
         return alquilerRepositoryPort.guardar(alquiler);

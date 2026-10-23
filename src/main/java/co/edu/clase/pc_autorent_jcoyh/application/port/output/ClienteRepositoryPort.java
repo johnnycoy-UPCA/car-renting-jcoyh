@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface ClienteRepositoryPort {
     Cliente guardar(Cliente cliente);
-    Optional<Cliente> buscarPorId(Long id);
-    Optional<Cliente> buscarPorDocumento(Long documento);
-    List<Cliente> listarTodos(); // IMPLEMENTADO PARA LA CONSULTA EN FRONT-END index_v2.html
+    Optional<Cliente> buscarPorId(Long clienteId);
+    Optional<Cliente> buscarPorDocumento(Long clienteDocumento);
+    List<Cliente> listarTodos();
 }

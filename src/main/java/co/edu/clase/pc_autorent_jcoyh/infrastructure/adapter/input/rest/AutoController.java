@@ -2,6 +2,9 @@ package co.edu.clase.pc_autorent_jcoyh.infrastructure.adapter.input.rest;
 
 import co.edu.clase.pc_autorent_jcoyh.application.port.input.RegistrarAutoUseCase;
 import co.edu.clase.pc_autorent_jcoyh.domain.model.Auto;
+import co.edu.clase.pc_autorent_jcoyh.infrastructure.adapter.input.rest.dto.ActualizarMantenimientoDto;
+import co.edu.clase.pc_autorent_jcoyh.infrastructure.adapter.input.rest.dto.CrearAutoDto;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +13,6 @@ import co.edu.clase.pc_autorent_jcoyh.application.port.input.DarBajaAutoUseCase;
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.AutoRepositoryPort;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/autos")
@@ -21,7 +23,6 @@ public class AutoController {
     private final ActualizarMantenimientoUseCase actualizarMantenimientoUseCase;
     private final DarBajaAutoUseCase darBajaAutoUseCase;
 
-    // Inyección a través del constructor
     public AutoController(RegistrarAutoUseCase registrarAutoUseCase, 
                         AutoRepositoryPort autoRepositoryPort,
                         ActualizarMantenimientoUseCase actualizarMantenimientoUseCase,
@@ -33,38 +34,59 @@ public class AutoController {
     }
 
     @PostMapping
-    public ResponseEntity<Auto> registrarAuto(@RequestBody Auto auto) {
-        Auto autoRegistrado = registrarAutoUseCase.registrar(auto);
-        return new ResponseEntity<>(autoRegistrado, HttpStatus.CREATED);
+    public ResponseEntity<Auto> registrarAuto(@RequestBody CrearAutoDto request) {
+        Double kilometrajeInicial = (request.getKilometraje() == null) ? 0.0 : request.getKilometraje();
+
+        Auto autoSolicitud = new Auto(
+            null, 
+            request.getPlaca(), 
+            request.getMarca(), 
+            request.getModelo(), 
+            request.getAnio(), 
+            request.getPrecioPorDia(), 
+            request.getDeposito(), 
+            kilometrajeInicial, 
+            null
+        );
+
+        Auto nuevoAuto = registrarAutoUseCase.registrarAuto(autoSolicitud);
+
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(nuevoAuto);
     }
 
     @PutMapping("/mantenimiento")
-    public ResponseEntity<Auto> actualizarMantenimiento(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<Auto> actualizarMantenimiento(@RequestBody ActualizarMantenimientoDto request) {
 
-        String placa = payload.get("placa").toString().trim();
-        boolean enMantenimiento = Boolean.parseBoolean(payload.get("enMantenimiento").toString());
-        int kilometraje = Integer.parseInt(payload.get("kilometraje").toString());
+        String placa = request.getPlaca().trim();
+        boolean enMantenimiento = request.getEnMantenimiento();
+        Double kilometraje = request.getKilometraje();
 
-        Auto autoMutado = actualizarMantenimientoUseCase.actualizar(placa, enMantenimiento, kilometraje);
-        return ResponseEntity.ok(autoMutado);
+        Auto autoMantenimiento = actualizarMantenimientoUseCase.actualizarMantenimiento(placa, 
+                                    enMantenimiento, 
+                                    kilometraje);
+        return ResponseEntity
+            .ok(autoMantenimiento);
     }
 
     @PutMapping("/{id}/desactivar")
-    public ResponseEntity<Auto> darDeBajaAuto(@PathVariable Long id) {
+    public ResponseEntity<Auto> darDeBajaAuto(@PathVariable("id") Long autoId) {
 
-        Auto autoDesactivado = darBajaAutoUseCase.darDeBaja(id);
-        return ResponseEntity.ok(autoDesactivado);
+        Auto autoDesactivado = darBajaAutoUseCase.darDeBajaAuto(autoId);
+        return ResponseEntity
+            .ok(autoDesactivado);
     }
 
-    // Icluído al final para interacción con la página index_v2.html
     @GetMapping
     public ResponseEntity<List<Auto>> listarTodos() {
-        return ResponseEntity.ok(autoRepositoryPort.listarTodos());
+        return ResponseEntity
+            .ok(autoRepositoryPort.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Auto> buscarPorId(@PathVariable Long id) {
-        return autoRepositoryPort.buscarPorId(id)
+    public ResponseEntity<Auto> buscarPorId(@PathVariable("id") Long autoId) {
+        return autoRepositoryPort.buscarPorId(autoId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

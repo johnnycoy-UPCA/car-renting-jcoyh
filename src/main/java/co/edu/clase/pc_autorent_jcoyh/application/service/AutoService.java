@@ -1,90 +1,105 @@
 package co.edu.clase.pc_autorent_jcoyh.application.service;
 
 import co.edu.clase.pc_autorent_jcoyh.application.port.input.RegistrarAutoUseCase;
+import co.edu.clase.pc_autorent_jcoyh.application.port.input.DarBajaAutoUseCase;
+import co.edu.clase.pc_autorent_jcoyh.application.port.input.ActualizarMantenimientoUseCase;
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.AutoRepositoryPort;
 import co.edu.clase.pc_autorent_jcoyh.application.port.output.AlquilerRepositoryPort;
-import co.edu.clase.pc_autorent_jcoyh.application.port.input.ActualizarMantenimientoUseCase;
-import co.edu.clase.pc_autorent_jcoyh.application.port.input.DarBajaAutoUseCase;
 import co.edu.clase.pc_autorent_jcoyh.domain.model.Auto;
-import java.util.Optional;
+import co.edu.clase.pc_autorent_jcoyh.domain.model.EstadosNegocio;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.AutoException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.NoEncontradoException;
+import co.edu.clase.pc_autorent_jcoyh.domain.exception.MensajesError;
 
-public class AutoService implements RegistrarAutoUseCase, ActualizarMantenimientoUseCase, DarBajaAutoUseCase {
+import java.util.List;
+
+public class AutoService implements RegistrarAutoUseCase, 
+                                    ActualizarMantenimientoUseCase, 
+                                    DarBajaAutoUseCase {
     
     private final AutoRepositoryPort autoRepositoryPort;
     private final AlquilerRepositoryPort alquilerRepositoryPort;
 
-    public AutoService(AutoRepositoryPort autoRepositoryPort, AlquilerRepositoryPort alquilerRepositoryPort) {
+    public AutoService(AutoRepositoryPort autoRepositoryPort, 
+                    AlquilerRepositoryPort alquilerRepositoryPort) {
         this.autoRepositoryPort = autoRepositoryPort;
         this.alquilerRepositoryPort = alquilerRepositoryPort;
     }
 
     @Override
-    public Auto registrar(Auto auto) {
-        // VALIDACIÓN: Verificar si la placa ya se encuentra en el catálogo
-        Optional<Auto> autoExistente = autoRepositoryPort.buscarPorPlaca(auto.getPlaca());
-        if (autoExistente.isPresent()) {
-            Auto encontrado = autoExistente.get();
-            if (!"INACTIVO".equalsIgnoreCase(encontrado.getEstado())) {
-                throw new RuntimeException("El vehículo con placa " + encontrado.getPlaca() + 
-                " ya se encuentra registrado y ACTIVO en el sistema con el ID: " + encontrado.getId());
+    public Auto registrarAuto(Auto auto) {
+
+        List<Auto> autosExistentes = autoRepositoryPort.buscarPorPlaca(auto.getPlaca());
+
+        for (Auto encontrado : autosExistentes) {
+            if (!EstadosNegocio.AUTO_INACTIVO.equalsIgnoreCase(encontrado.getEstado())) {
+                throw new  AutoException(
+                    String.format(MensajesError.AUTO_PLACA_REPETIDA, encontrado.getPlaca())
+                );
             }
         }
-        
-        // Forzar a que JPA e H2 generen un ID secuencial nuevo
-        auto.setId(null);
-        // Autos nacen en estado DISPONIBLE
-        auto.setEstado("DISPONIBLE");
-        return autoRepositoryPort.guardar(auto);
+
+        Auto nuevoAuto = new Auto(
+                            null, 
+                            auto.getPlaca(), 
+                            auto.getMarca(), 
+                            auto.getModelo(), 
+                            auto.getAnio(), 
+                            auto.getPrecioPorDia(), 
+                            auto.getDeposito(), 
+                            auto.getKilometraje(), 
+                            EstadosNegocio.AUTO_DISPONIBLE
+                        );
+
+        return autoRepositoryPort.guardar(nuevoAuto);
     }
 
-    // IMPLEMENTACIÓN DEL CASO DE USO DE MANTENIMIENTO
     @Override
-    public Auto actualizar(String placa, boolean enMantenimiento, int kilometraje) {
-        // 1. Buscar el vehículo en el catálogo H2 por su placa
-        Auto auto = autoRepositoryPort.buscarPorPlaca(placa)
-            .orElseThrow(() -> new RuntimeException("El vehículo con placa " + placa + " no se encuentra registrado en el sistema."));
+    public Auto actualizarMantenimiento(String placa, 
+                                        boolean enMantenimiento, 
+                                        Double kilometraje) {
 
-        // 2. Verificar si tiene un alquiler ACTIVO
-        boolean tieneAlquilerActivo = alquilerRepositoryPort.listarTodos().stream()
-            .anyMatch(alquiler -> alquiler.getAutoId().equals(auto.getId()) && "ACTIVO".equalsIgnoreCase(alquiler.getEstado()));
-
-        if (tieneAlquilerActivo) {
-            throw new RuntimeException("Operación Denegada: El vehículo con placa " + placa + 
-                " no puede ingresar ni salir de MANTENIMIENTO debido a que cuenta con un contrato de alquiler ACTIVO vigente.");
-        }
-
-        // 3. Cambio de estado en Arquitectura Hexagonal
+        Auto auto = autoRepositoryPort
+                        .buscarPorPlaca(placa)
+                        .stream()
+                        .filter(a -> !EstadosNegocio.AUTO_INACTIVO.equalsIgnoreCase(a.getEstado()))
+                        .findFirst()
+                        .orElseThrow(() -> new NoEncontradoException(
+                                String.format(MensajesError.AUTO_PLACA_NO_REGISTRADO, placa)
+                            )
+                        );
+                            
         if (enMantenimiento) {
             auto.ingresarAMantenimiento();
         } else {
-            auto.salirDeMantenimiento(kilometraje); // Valida internamente el kilometraje
+            auto.salirDeMantenimiento(kilometraje);
         }
 
-        // 4. Graba en la Base y regresa el JSON
         return autoRepositoryPort.guardar(auto);
     }
 
-    // IMPLEMENTACIÓN DEL CASO DE USO: DAR DE BAJA AUTO
     @Override
-    public Auto darDeBaja(Long id) {
-        // 1. Buscar el vehículo en H2 por su ID
+    public Auto darDeBajaAuto(Long id) {
         Auto auto = autoRepositoryPort.buscarPorId(id)
-            .orElseThrow(() -> new RuntimeException("El vehículo solicitado con ID " + id + " no se encuentra registrado en el sistema."));
+            .orElseThrow(() -> new NoEncontradoException(
+                    String.format(MensajesError.AUTO_NO_REGISTRADO, id)
+                )
+            );
 
-        // 2. Verificar contratos activos vigentes
-        boolean tieneAlquilerActivo = alquilerRepositoryPort.listarTodos().stream()
-            .anyMatch(alquiler -> alquiler.getAutoId().equals(auto.getId()) && "ACTIVO".equalsIgnoreCase(alquiler.getEstado()));
+        boolean tieneAlquilerActivo = alquilerRepositoryPort
+                                        .listarTodos()
+                                        .stream()
+                                        .anyMatch(alquiler -> alquiler.getAutoId().equals(auto.getId()) && 
+                                                EstadosNegocio.AUTO_DISPONIBLE.equalsIgnoreCase(alquiler.getEstado())
+                                        );
 
         if (tieneAlquilerActivo) {
-            throw new RuntimeException("Operación Denegada: El vehículo con placa " + auto.getPlaca() + 
-                " no puede ser desactivado debido a que cuenta con un contrato de alquiler ACTIVO en curso.");
+            throw new AutoException(
+                String.format(MensajesError.AUTO_BAJA_CONTRATO_ACTIVO, auto.getPlaca())
+            );
         }
 
-        // 3. Cambio de estado en Arquitectura Hexagonal
-        auto.desactivar();
-
-        // 4. Guardar en la BD
+        auto.desactivarAuto();
         return autoRepositoryPort.guardar(auto);
     }
-
 }

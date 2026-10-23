@@ -6,6 +6,7 @@ import co.edu.clase.pc_autorent_jcoyh.application.port.output.ClienteRepositoryP
 import co.edu.clase.pc_autorent_jcoyh.application.service.AlquilerService;
 import co.edu.clase.pc_autorent_jcoyh.application.service.AutoService;
 import co.edu.clase.pc_autorent_jcoyh.application.service.ClienteService;
+import jakarta.transaction.Transactional;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,12 +16,14 @@ import org.springframework.context.annotation.Configuration;
 public class BeanConfiguration {
 
     @Bean
+    @Transactional 
     public AutoService autoService(AutoRepositoryPort autoRepositoryPort,
                                 AlquilerRepositoryPort alquilerRepositoryPort) {
-        return new AutoService(autoRepositoryPort, alquilerRepositoryPort); // De aquí pasa al constructor.
+        return new AutoService(autoRepositoryPort, alquilerRepositoryPort);
     }
 
     @Bean
+    @Transactional 
     public AlquilerService alquilerService(AlquilerRepositoryPort alquilerRepositoryPort, 
                                         AutoRepositoryPort autoRepositoryPort,
                                         ClienteRepositoryPort clienteRepositoryPort) {
@@ -28,6 +31,7 @@ public class BeanConfiguration {
     }
 
     @Bean 
+    @Transactional 
     public ClienteService clienteService(ClienteRepositoryPort clienteRepositoryPort,
                                         AlquilerRepositoryPort alquilerRepositoryPort) {
                 return new ClienteService(clienteRepositoryPort, alquilerRepositoryPort);

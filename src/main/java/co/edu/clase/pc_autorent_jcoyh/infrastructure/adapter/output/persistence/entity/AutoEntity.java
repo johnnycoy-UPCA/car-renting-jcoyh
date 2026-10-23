@@ -10,8 +10,7 @@ public class AutoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // @Column(nullable = false, unique = true, length = 10)
-    @Column(nullable = false, length = 10) // Se quitó el atributo unique porque debe aceptar una placa que ha sido previamente dada de baja
+    @Column(nullable = false, length = 7)
     private String placa;
 
     @Column(nullable = false, length = 50)
@@ -27,18 +26,26 @@ public class AutoEntity {
     private double precioPorDia;
 
     @Column(nullable = false)
-    private double deposito; // Depósito inicial requerido
+    private double deposito;
 
     @Column(nullable = false)
-    private int kilometraje; // Kilometraje histórico total
+    private Double kilometraje;
 
     @Column(nullable = false, length = 20)
-    private String estado; // "DISPONIBLE", "ALQUILADO", "MANTENIMIENTO"
+    private String estado;
 
-    // Constructor obligatorio requerido por JPA
     public AutoEntity() {}
 
-    public AutoEntity(Long id, String placa, String marca, String modelo, int anio, double precioPorDia, double deposito, int kilometraje, String estado) {
+    public AutoEntity(Long id, 
+                    String placa, 
+                    String marca, 
+                    String modelo, 
+                    int anio, 
+                    double precioPorDia, 
+                    double deposito, 
+                    Double kilometraje, 
+                    String estado) {
+                        
         this.id = id;
         this.placa = placa;
         this.marca = marca;
@@ -50,31 +57,66 @@ public class AutoEntity {
         this.estado = estado;
     }
 
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() { 
+        return id; 
+    }
+    public void setId(Long id) { 
+        this.id = id; 
+    }
 
-    public String getPlaca() { return placa; }
-    public void setPlaca(String placa) { this.placa = placa; }
+    public String getPlaca() { 
+        return placa; 
+    }
+    public void setPlaca(String placa) { 
+        this.placa = placa; 
+    }
 
-    public String getMarca() { return marca; }
-    public void setMarca(String marca) { this.marca = marca; }
+    public String getMarca() { 
+        return marca; 
+    }
+    public void setMarca(String marca) { 
+        this.marca = marca; 
+    }
 
-    public String getModelo() { return modelo; }
-    public void setModelo(String modelo) { this.modelo = modelo; }
+    public String getModelo() { 
+        return modelo; 
+    }
+    public void setModelo(String modelo) { 
+        this.modelo = modelo; 
+    }
 
-    public int getAnio() { return anio; }
-    public void setAnio(int anio) { this.anio = anio; }
+    public int getAnio() { 
+        return anio; 
+    }
+    public void setAnio(int anio) { 
+        this.anio = anio; 
+    }
 
-    public double getPrecioPorDia() { return precioPorDia; }
-    public void setPrecioPorDia(double precioPorDia) { this.precioPorDia = precioPorDia; }
+    public double getPrecioPorDia() { 
+        return precioPorDia; 
+    }
+    public void setPrecioPorDia(double precioPorDia) { 
+        this.precioPorDia = precioPorDia; 
+    }
 
-    public double getDeposito() { return deposito; }
-    public void setDeposito(double deposito) { this.deposito = deposito; }
+    public double getDeposito() { 
+        return deposito; 
+    }
+    public void setDeposito(double deposito) { 
+        this.deposito = deposito; 
+    }
 
-    public int getKilometraje() { return kilometraje; }
-    public void setKilometraje(int kilometraje) { this.kilometraje = kilometraje; }
+    public Double getKilometraje() { 
+        return kilometraje; 
+    }
+    public void setKilometraje(Double kilometraje) { 
+        this.kilometraje = kilometraje; 
+    }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public String getEstado() { 
+        return estado; 
+    }
+    public void setEstado(String estado) { 
+        this.estado = estado; 
+    }
 }

@@ -7,7 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class PcAutorentJcoyhApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PcAutorentJcoyhApplication.class, args);
+		SpringApplication.run(PcAutorentJcoyhApplication.class, 
+							args);
 	}
 
 }

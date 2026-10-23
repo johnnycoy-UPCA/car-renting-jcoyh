@@ -16,7 +16,9 @@ public class AlquilerPersistenceAdapter implements AlquilerRepositoryPort {
     private final AlquilerJpaRepository alquilerJpaRepository;
     private final AlquilerMapper alquilerMapper;
 
-    public AlquilerPersistenceAdapter(AlquilerJpaRepository alquilerJpaRepository, AlquilerMapper alquilerMapper) {
+    public AlquilerPersistenceAdapter(AlquilerJpaRepository alquilerJpaRepository, 
+                                    AlquilerMapper alquilerMapper) {
+
         this.alquilerJpaRepository = alquilerJpaRepository;
         this.alquilerMapper = alquilerMapper;
     }
@@ -29,13 +31,14 @@ public class AlquilerPersistenceAdapter implements AlquilerRepositoryPort {
     }
 
     @Override
-    public Optional<Alquiler> buscarPorId(Long id) {
-        return alquilerJpaRepository.findById(id).map(alquilerMapper::toDomain);
+    public Optional<Alquiler> buscarPorId(Long alquilerId) {
+        return alquilerJpaRepository.findById(alquilerId).map(alquilerMapper::toDomain);
     }
 
-    // Incluído para uso en el Front-End
     public List<Alquiler> listarTodos() {
-        return alquilerJpaRepository.findAll().stream()
+        return alquilerJpaRepository
+                .findAll()
+                .stream()
                 .map(alquilerMapper::toDomain)
                 .toList();
     }    

@@ -7,29 +7,30 @@ import org.springframework.stereotype.Component;
 @Component
 public class AlquilerMapper {
 
-    // Convierte de la Base de Datos (Entity) hacia el Negocio Puro (Domain)
     public Alquiler toDomain(AlquilerEntity entity) {
-        if (entity == null) return null;
+        if (entity == null) {
+            return null;
+        }
         
-        Alquiler domain = new Alquiler();
-        domain.setId(entity.getId());
-        domain.setClienteId(entity.getClienteId());
-        domain.setAutoId(entity.getAutoId());
-        domain.setFechaReserva(entity.getFechaReserva());
-        domain.setFechaInicio(entity.getFechaInicio());
-        domain.setFechaFin(entity.getFechaFin());
-        domain.setCantidadDias(entity.getCantidadDias());
-        domain.setValorTotal(entity.getValorTotal());
-        domain.setKilometrajeInicial(entity.getKilometrajeInicial());
-        domain.setKilometrajeFinal(entity.getKilometrajeFinal());
-        domain.setEstado(entity.getEstado());
-        
-        return domain;
+        return new Alquiler(
+            entity.getId(),
+            entity.getClienteId(),
+            entity.getAutoId(),
+            entity.getFechaReserva(),
+            entity.getFechaInicio(),
+            entity.getFechaFin(),
+            entity.getCantidadDias(),
+            entity.getValorTotal(),
+            entity.getKilometrajeInicial(),
+            entity.getKilometrajeFinal(),
+            entity.getEstado()
+        );
     }
 
-    // Convierte del Negocio Puro (Domain) hacia la Base de Datos (Entity)
     public AlquilerEntity toEntity(Alquiler domain) {
-        if (domain == null) return null;
+        if (domain == null) {
+            return null;
+        }
         
         return new AlquilerEntity(
             domain.getId(),

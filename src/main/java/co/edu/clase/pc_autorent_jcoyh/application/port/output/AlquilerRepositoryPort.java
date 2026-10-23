@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface AlquilerRepositoryPort {
     Alquiler guardar(Alquiler alquiler);
-    Optional<Alquiler> buscarPorId(Long id);
-    List<Alquiler> listarTodos(); // IMPLEMENTADO PARA LA CONSULTA EN FRONT-END index_v2.html
+    Optional<Alquiler> buscarPorId(Long alquilerId);
+    List<Alquiler> listarTodos();
 }

@@ -16,7 +16,8 @@ public class ClientePersistenceAdapter implements ClienteRepositoryPort {
     private final ClienteJpaRepository clienteJpaRepository;
     private final ClienteMapper clienteMapper;
 
-    public ClientePersistenceAdapter(ClienteJpaRepository clienteJpaRepository, ClienteMapper clienteMapper) {
+    public ClientePersistenceAdapter(ClienteJpaRepository clienteJpaRepository, 
+                                    ClienteMapper clienteMapper) {
         this.clienteJpaRepository = clienteJpaRepository;
         this.clienteMapper = clienteMapper;
     }
@@ -25,27 +26,30 @@ public class ClientePersistenceAdapter implements ClienteRepositoryPort {
     public Cliente guardar(Cliente cliente) {
         ClienteEntity entity = clienteMapper.toEntity(cliente);
         ClienteEntity entityGuardada = clienteJpaRepository.save(entity);
-        return clienteMapper.toDomain(entityGuardada);
+        return clienteMapper
+            .toDomain(entityGuardada);
     }
 
     @Override
-    public Optional<Cliente> buscarPorId(Long id) {
-        return clienteJpaRepository.findById(id).map(clienteMapper::toDomain);
+    public Optional<Cliente> buscarPorId(Long clienteId) {
+        return clienteJpaRepository
+            .findById(clienteId)
+            .map(clienteMapper::toDomain);
     }
 
     @Override
     public Optional<Cliente> buscarPorDocumento(Long documento) {
-        return clienteJpaRepository.findByDocumento(documento).stream()
-                .map(clienteMapper::toDomain)
-                .filter(cliente -> !"INACTIVO".equalsIgnoreCase(cliente.getEstado()))
-                .findFirst();
+        return clienteJpaRepository
+            .findByDocumento(documento)
+            .map(clienteMapper::toDomain);
     }
 
-    // Incluído para uso en el Front-End
     public List<Cliente> listarTodos() {
-        return clienteJpaRepository.findAll().stream()
-                .map(clienteMapper::toDomain)
-                .toList();
+        return clienteJpaRepository
+            .findAll()
+            .stream()
+            .map(clienteMapper::toDomain)
+            .toList();
     }
 
 }
