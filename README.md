@@ -554,3 +554,6 @@ Una vez que el servidor web embebido se encuentra en ejecución por medio de cua
 *   **Consola Administrativa SQL (H2 Database):** Abrir el navegador e ingresar a [http://localhost:8081/h2-console](http://localhost:8081/h2-console). 
     *   *Configuración obligatoria:* Asegurarse de cambiar el campo **JDBC URL** a `jdbc:h2:mem:autorentdb`, escribir `sa` en **User Name** y dejar la casilla de la contraseña totalmente vacía.
 *   **Panel Operativo Frontend de Pruebas:** Si lo desea, puede abrir de manera directa en el navegador Google Chrome el archivo estático ubicado en la ruta del proyecto: `src/main/resources/static/index_v7.html` o ingresando a la ruta [http://localhost:8081/index_v7.html](http://localhost:8081/index_v7.html) para simular las transacciones y peticiones HTTP en tiempo real.
+
+## Diagrama del proyecto
+<img width="3016" height="5998" alt="pc-autorent-jcoyh ENTREGABLE Diagrama" src="https://github.com/user-attachments/assets/940f79a4-6b6f-4c21-beed-ccc090ffdbdd" />
